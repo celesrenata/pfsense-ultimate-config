@@ -83,6 +83,7 @@ I will need you to find a few things before we start.
         * Encryption Algorithm -- in case the one published here is out of date (2023-04-07)
 
 #### NordVPN
+* Their directions: https://support.nordvpn.com/Connectivity/Router/1626958942/pfSense-2-5-Setup-with-NordVPN.htm
 * NordVPN has directions for both OpenVPN and WireGuard. I will be using WireGuard in this guide for the final product but will provide my last used settings for OpenVPN. If you know how to improve upon them, let me know!
 * NordVPN also allows for 2 concurrent connections via OpenVPN, but only just 1 using WireGuard, however the throughput will be a lot higher per connection via WireGuard.
 * Setting up WireGuard will require a lot of additional steps to lift the information specific for your connection, we will circle back to this topic after we have Debian running.
