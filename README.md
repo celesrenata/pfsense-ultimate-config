@@ -15,7 +15,17 @@ This project contains the documentation on how to setup your pfSense firewall to
 10. [Create CA and Certificates](#create-ca-and-certificates)
 11. [OpenVPN Tunnels](#openvpn-tunnels)
 12. [Service Watchdog](#service-watchdog)
-12. [WireGuard Tunnel](#wireguard-tunnel)
+13. [WireGuard Tunnel](#wireguard-tunnel)
+14. [Redirecting all WAN bound traffic through VPNs](#redirecting-all-wan-bound-traffic-through-vpns)
+    1. [Create VPN Interfaces](#create-vpn-interfaces)
+    2. [Create Gateway For WireGuard](#create-gateway-for-wireguard)
+    3. [Test VPN Connectivity](#test-vpn-connectivity)
+    4. [Create Gateway Group](#create-gateway-group)
+    5. [Update NAT Settings](#update-nat-settings)
+    6. [Update Firewall Rules](#update-firewall-rules)
+    7. [Verify Default WAN Behavior](#verify-default-wan-behavior)
+    8. [Setup DNS and SSL/TLS Outgoing DNS Queries](#setup-dns-and-ssltls-outgoing-dns-queries)
+    9. [Section Conclusion](#section-conclusion)
 
 ## Features
 * Secure VPN:
@@ -140,9 +150,11 @@ I will need you to find a few things before we start.
 2. Start the Debian LiveCD.
     * If you have a Retina display click **View > Virtual Screen 1 > Scale to 200%**.
 3. Click on **Install Debian**
-4. Follow the instructions on the screen to install, it is mostly a _mash next_ endeavor.
-    * <span style="color:red">I suggest setting the correct timezone so you don't get SSL errors later!</span>
-    * If your screen locks while it installs, the password is **live**
+4. Follow the instructions on the screen to install, it is mostly a _mash next_ endeavor.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![Important-1.png](images/important-1.png)
+    * <span style="color:red">I suggest setting the correct timezone so you don't get SSL errors later!</span><br>
+![important-2.png](images/important-2.png)
+    * * If your screen locks while it installs, the password is **live**
 5. Shut the virtual machine down. VirtualBox will automagically remove the LiveCD for you after installation.
 6. Start the Debian virtual machine back up again and login.
 7. Open **Konsole** and run the following commands:
@@ -163,14 +175,16 @@ I will need you to find a few things before we start.
     5. Go back to **Konsole** and install it with: ```sh <(curl -sSf https://downloads.nordcdn.com/apps/linux/install.sh)```
     6. ```sudo usermod -aG nordvpn $USER```
     7. ```sudo apt-get install wireguard```
-    8. Reboot the Debian virtual machine and open the terminal again.
-        * <span style="color:red">Do not skip this step as NordVPN has its own implementation of WireGuard that it will use if it cannot connect the running WireGuard system socket</span>
+    8. Reboot the Debian virtual machine and open the terminal again.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![Important-1.png](images/important-1.png)
+        * <span style="color:red">Do not skip this step as NordVPN has its own implementation of WireGuard that it will use if it cannot connect the running WireGuard system socket</span><br>
+![important-2.png](images/important-2.png)
     9. Navigate to: https://www.nordvpn.com -- You will have to login.
     10. Click **NordVPN** under **Services** on the left navigation bar.
     11. Scroll down until you see **Access token**
     12. Generate a new token for 30 days.
     13. Paste into Konsole as ```nordvpn login --token <copied tokenID without the alligator brackets>```
-        * <span style="color:yellow">Watch out for garbage at the beginning and end of the copied string, it doesn't paste cleanly!</span>
+        * <span style="color:yellow">**Watch out for garbage at the beginning and end of the copied string, it doesn't paste cleanly!**</span>
     14. ```nordvpn connect```
     15. ```sudo wg show```
     16. ```sudo wg showconf nordlynx```
@@ -234,7 +248,7 @@ I will need you to find a few things before we start.
     * **Certificate data:** 
       * Open one of the ExpressVPN .ovpn files and copy everything inbetween **\<ca\>** and **\</ca\>** and paste it into this text box.
     * Save
-5. <span style="color:green">**Optional**, add the NordVPN CA certificate for OpenVPN -- Click **Add**</span>
+5. ![optional-1.png](images/optional-1.png)<br><span style="color:green">**Optional**, add the NordVPN CA certificate for OpenVPN -- Click **Add**</span>
 6. <span style="color:green">Enter the following data:</span>
     * <span style="color:green">**Descriptive name:** NordVPN CA</span>
     * <span style="color:green">**Method:** Import an existing Certificate Authority</span>
@@ -270,7 +284,8 @@ I will need you to find a few things before we start.
     PApL8PytggYKeQmRhl499+6jLxcZ2IegLfqq41dzIjwHwTMplg+1pKIOVojpWA==
     -----END CERTIFICATE-----
     ```
-7. <span style="color:green">Save</span>
+7. <span style="color:green">Save</span><br>
+![optional-2.png](images%2Foptional-2.png)
 8. Navigate to **System > Certificate Manager > Certificates > Add/Sign**
 9. Enter the following data:
     * **Method:** Create an internal Certificate
@@ -331,8 +346,8 @@ I will need you to find a few things before we start.
     * You should see something like this:<br>
     ![venv-virtualbox-pfsense-vpn-city1.png](images/venv-virtualbox-pfsense-ovpn-city1.png)
     * If you do not see this, you will have to refer to the related log entries.
-5. <span style="color:yellow">Do not forget to repeat the steps above for city2!</span>
-6. <span style="color:red">**Optional and unreliable -- Setup OpenVPN for NordVPN**</span>
+5. <span style="color:yellow">**Do not forget to repeat the steps above for city2!**</span>
+6. ![optional-1.png](images/optional-1.png)<br><span style="color:red">**Optional and unreliable -- Setup OpenVPN for NordVPN**</span>
 7. <span style="color:red">First, you will have to reset nordvpn to use OpenVPN</span>
     * ```nordvpn set technology openvpn```
 8. <span style="color:red">Next, you will have to connect to a few NordVPN hosts to get some server names in your area for OpenVPN. When it connects it will give you a name like us1234. the full hostname would be us1234.nordvpn.com</span>
@@ -387,9 +402,11 @@ I will need you to find a few things before we start.
         * <span style="color:red">This config should also work out of the box, if you have problems, bump this number up to 4.</span>
         * <span style="color:red">You can find the logs under **Status > System Logs > OpenVPN** or clicking the **Related log entries** icon in the top right.</span>
     * <span style="color:red">Save</span>
-11. <span style="color:yellow">Do not forget to repeat the steps above for city2!</span>
+11. <span style="color:yellow">**Do not forget to repeat the steps above for city2!**</span>
 12. <span sytle="color:yellow">**Do not forget to reset nordvpn back to nordlynx!**</span><br>
-    ```nordvpn set technology nordlynx```
+    ```nordvpn set technology nordlynx```<br>
+![optional-2.png](images/optional-2.png)
+
 ## Service Watchdog
 1. Navigate to **Services > Service Watchdog**
 2. Add both OpenVPN clients.
@@ -400,16 +417,16 @@ I will need you to find a few things before we start.
 2. Enter the following data:
     * **Description:** NordVPN - \<city1\>
     * **Listen Port:** 51820
-    * **Interface Keys: Click Generate
-    * **Interface Addresses:** Copy the endpoint IP address from either file (they're the same)
+    * **Interface Keys:** Copy the private key from ```wg showconf nordlynx```
     * Save Tunnel
 3. Navigate to **VPN > WireGuard > Peers > Add Peer**
 4. Enter the following data:
     * **Tunnel:** tun_wg0
     * **Description:** NordVPN Peer
     * **Dynamic Endpoint:** Uncheck
-    * **Endpoint:** enter the same endpoint found while running ```nordvpn connect```
+    * **Endpoint**: Copy the endpoint IP address from either command (they're the same)
     * **Keep Alive:** 25
+    * **Public Key:** Copy from ```wg showconf nordlynx```
     * **Allowed IPs:** 0.0.0.0/0 -- NordVPN Allowed IPs
     * Save Peer
 5. Navigate to **VPN > WireGuard > Settings**
@@ -418,3 +435,131 @@ I will need you to find a few things before we start.
 8. Navigate to **VPN > WireGuard Status**
     * You should see something like this:<br>
     ![venv-virtualbox-pfsense-wireguard-city1.png](images%2Fvenv-virtualbox-pfsense-wireguard-city1.png)
+9. Take another snapshot of the pfSense virtual machine and label it: **VPN Config**
+
+## Redirecting all WAN bound traffic through VPNs
+
+### Create VPN Interfaces
+1. Navigate to **Interfaces > Interface Assignments**
+2. Add both ExpressVPN tunnels and the NordVPN tunnel. -- **Make note of their names in relation to what tunnel they are!**
+3. Save
+4. Navigate to **Interfaces > OPT1**
+5. Enter the following data:
+    * **Enable:** Check
+    * **Description:** ExpressVPN-city1 or ExpressVPN-city2 or NordVPN-city1 depending on which you mapped first.
+6. Save
+7. **Repeat for all newly created OPT interfaces**
+8. Apply Changes
+9. You should see something like this:<br>
+![venv-virtualbox-pfsense-int-assignment.png](images/venv-virtualbox-pfsense-int-assignment.png)
+10. Now circle back to **NordVPNcity1**
+11. Enter the following data:
+    * **IPv4 Configuration Type** to **Static IPv4**
+    * **IPv4 Address:** 10.5.0.2 / 29
+12. Save
+
+### Create Gateway for WireGuard
+1. Navigate to **System > Routing > Gateways**
+2. Add
+3. Enter the following data:
+    * **Disabled:** Uncheck
+    * **Interface:** NORDVPNCITY1
+    * **Name:** NORDVPNCITY1
+    * **Description:** Interface NORDVPNCITY1 Gateway
+    * **Gateway:** 10.5.0.1
+    * **Monitor IP:** 103.86.96.100 -- NordVPN.com
+4. Save
+5. Change **Default gateway IPv4** to WAN_DHCP or equivalent
+6. Change **Default gateway IPv6** to WAN_DHCP6 or equivalent
+7. Save
+8. Apply Changes
+
+### Edit Gateways for OpenVPN
+1. Navigate to **System > Routing > Gateways**
+2. Edit **EXPRESSVPNCITY1**
+3. Add Monitor IP: 208.67.222.222 -- ExpressVPN DNS VIP
+4. Click **Display Advanced**
+5. Update **Weight:** 2 -- ExpressVPN tunnels drop more packets by a large margin, so this will lean heavier on the WireGuard connection
+6. Save
+7. Edit **EXPRESSVPNCITY2**
+8. Add Monitor IP: 208.67.220.220 -- ExpressVPN DNS VIP
+9. Click **Display Advanced**
+10. Update **Weight:** 2 -- ExpressVPN tunnels drop more packets by a large margin, so this will lean heavier on the WireGuard connection
+11. Save
+12. Apply Changes
+
+### Test VPN Connectivity
+1. Navigate to **Diagnostics > Ping**
+2. Enter the following data:
+    * **Hostname:** google.com, a known ICMP responder.
+    * **Source address:** Try each of your new gateways. EXPRESSCITY1 / EXPRESSCITY2 / NORDVPNCITY1
+3. Click Ping
+4. Repeat for All VPNs
+
+### Create Gateway Group
+1. Navigate to **System > Routing > Gateways > Gateway Groups**
+2. Add
+3. Enter the following data:
+    * **Group Name:** Outbound_VPN_Group
+    * **WAN_DHCP or equivalent:** Tier 2
+    * **NORDVPNCITY1:** Tier 1
+    * **ExpressVPNCITY1_VP...:** Tier 1
+    * **ExpressVPNCITY2_VP...:** Tier 1
+    * **Trigger Level:** High Latency -- If we can get ExpressVPN openvpn connections drop less packets, then we can use more aggressive tactics.
+    * **Description:** VPN Group with Comcast Failover
+4. Save
+
+### Update NAT Settings
+1. Navigate to **Firewall > NAT > Outbound**
+2. Select **Manual Outbound NAT rule generation**
+3. Save
+4. Apply Changes
+5. At the bottom of mappings click **Add to Top** we will be doing this for each VPN connection
+6. Enter the following data:
+    * **Interface:** EXPRESSVPNCITY1 / EXPRESSVPNCITY2 / NORDVPNCITY1
+    * **Address Family:** IPv4
+    * **Source:** 192.168.5.0/24
+    * **Description:** Allow normal traffic to exit via VPN
+7. Save
+8. To speed up adding the next two, on the right next to the rule you just added under actions, click the copy icon and just change the **Interface!**
+9. Apply Changes
+
+### Update Firewall Rules
+1. Navigate to **Firewall > Rules > LAN**
+2. Click **Edit icon** on the rule with the description: "Default allow LAN to any rule"
+3. Click **Advanced Options**
+4. Update **Gateway** to **Outbound_VPN_Group**
+5. Save
+6. Apply Changes
+7. Navigate to **Diagnostics > Reboot**
+8. Submit
+
+### Verify Default WAN Behavior
+1. Navigate to https://www.google.com -- **search:** what is my ip
+    * If you already got flagged with a captcha, you don't even need to bother, you are on a VPN!
+2. Compare the IP listed with your WAN IP, if it is different, it is using a VPN
+3. Navigate to **Status > Gateways**
+4. You should see something like this:<br>
+![venv-virtualbox-pfsense-gateway-status.png](images/venv-virtualbox-pfsense-gateway-status.png)
+5. Click **Gateway Groups**
+6. You should see something like this:<br>
+![venv-virtualbox-pfsense-gateway-group-status.png](images/venv-virtualbox-pfsense-gateway-group-status.png)
+
+### Setup DNS and SSL/TLS Outgoing DNS Queries
+1. Navigate to **System > General Setup**
+2. Add DNS servers for your VPN Connections
+3. ExpressVPN uses: **208.67.220.220, 208.67.222.222** which is opendns.com
+4. NordVPN **instead** will use: **1.1.1.1, 1.0.0.1** which is cloudflare-dns.com
+5. WAN **instead** will use: **8.8.4.4** which is dns.google -- yes, dns.google.
+6. Save
+7. Navigate to **Services > DNS Resolver**
+8. Enter the following data:
+    * **DNSSEC:** Disable
+    * **DNS Query Forwarding**: Check **Use SSL/TLS for outgoing DNS Queries to Forwarding Servers**
+9. Save
+10. Apply Changes
+11. Take another snapshot, label it: **Initial VPN_WAN**
+
+### Section Conclusion
+* If your goal is to just have secure internet, you can stop here. However, if you want all the other bells and whistles used in IT Support, carry on!
+
