@@ -14,6 +14,8 @@ This project contains the documentation on how to setup your pfSense firewall to
 9. [Install pfSense 3rd Party Packages](#install-pfsense-3rd-party-packages)
 10. [Create CA and Certificates](#create-ca-and-certificates)
 11. [OpenVPN Tunnels](#openvpn-tunnels)
+12. [Service Watchdog](#service-watchdog)
+12. [WireGuard Tunnel](#wireguard-tunnel)
 
 ## Features
 * Secure VPN:
@@ -68,6 +70,7 @@ I will need you to find a few things before we start.
 ![Spoiler alert: If you don't write down current router's MAC address, you are going to have a bad time](images/meme-macaddress.jpeg)
 2. Be prepared for configuration corruption and using snapshots of your pfSense install as you tinker with it. Once we create a configuration you are happy with we can export it and apply it to your production environment.
 3. Also be prepared that your current VPN provider might suck. You will want to research what VPN providers in your area you want to use, as well as seeing how flexible they are at sending a ton of data through their network.
+4. Lastly, VirtualBox is not great with keeping the network up between virtual machines, you may have to reboot both of them time to time in order to reestablish connections.
 
 ### VPN Provider Information Gathering
 #### ExpressVPN
@@ -106,14 +109,16 @@ I will need you to find a few things before we start.
 ![venv-virtualbox-pfsense-network-2.png](images/venv-virtualbox-pfsense-network-2.png)
     9. Make note of the MAC addresses used by virtualbox otherwise you will not know which is which when setting up pfSense.
     10. Once updated, we will create the second virtual machine.
-6. Create a new Virtual Machine for gentoo LiveCD, give it enough power that you don't 5 minutes waiting for it to boot, you're not using all those extra cores anyway [=:
+6. Create a new Virtual Machine for the Debian LiveCD, give it enough power that you don't 5 minutes waiting for it to boot, you're not using all those extra cores anyway [=:
 ![venv-virtualbox-debian-setup-1.png](images/venv-virtualbox-debian-setup-1.png)
 ![venv-virtualbox-debian-setup-2.png](images/venv-virtualbox-debian-setup-2.png)
 ![venv-virtualbox-debian-setup-3.png](images/venv-virtualbox-debian-setup-3.png)
     1. Select the virtual machine we just created and click **Settings > Network > Adapter 1**.
     2. Change the attached network to **Internal Network**.
     3. Change the name to **pfSense**.
-    4. Save changes.
+    4. Click **General > Advanced**
+    5. Update **Shared Clipboard** to **Bidirectional**
+    6. Save changes.
 
 ## Install Virtual pfSense
 1. Start the pfsense virtual machine.
@@ -163,18 +168,19 @@ I will need you to find a few things before we start.
     10. Click **NordVPN** under **Services** on the left navigation bar.
     11. Scroll down until you see **Access token**
     12. Generate a new token for 30 days.
-    13. Paste into Konsole as ```nordvpn login --token <copied tokenID without the aligator brackets>```
+    13. Paste into Konsole as ```nordvpn login --token <copied tokenID without the alligator brackets>```
         * <span style="color:yellow">Watch out for garbage at the beginning and end of the copied string, it doesn't paste cleanly!</span>
     14. ```nordvpn connect```
     15. ```sudo wg show```
     16. ```sudo wg showconf nordlynx```
-    17. Save this information somewhere as you will need it later! I saved mine with my favorite text editor which wasn't installed:
+    17. Save this information from all 3 commands as you will need it later! I saved mine with my favorite text editor which wasn't installed:
         * ```sudo apt-get install vim```
+    18. ```nordvpn disconnect```
 
 ## Initial pfSense Setup
-14. Open an installed browser **Firefox/Chromium/Konqueror** and navigate to 192.168.1.1 (unless you had to change it above, however, I will be referring to it as 192.168.1.1 for the rest of this section).
-15. Login to pfSense using the default login credentials: **admin / pfsense**
-16. Follow the general setup instructions and make changes on steps I highlight below:
+1. Open an installed browser **Firefox/Chromium/Konqueror** and navigate to 192.168.1.1 (unless you had to change it above, however, I will be referring to it as 192.168.1.1 for the rest of this section).
+2. Login to pfSense using the default login credentials: **admin / pfsense**
+3. Follow the general setup instructions and make changes on steps I highlight below:
     1. **Step 2**: Setup the hostname and search domain of your firewall, for this I use **pfSense** and **virtualhome.local**:<br>
 ![venv-virtualbox-pfsense-setup-wizard-1.png](images/venv-virtualbox-pfsense-setup-wizard-1.png)
     2. **Step 3**: NTP settings are safe to leave alone unless you have your own:
@@ -218,9 +224,54 @@ I will need you to find a few things before we start.
     * **Method:** Create an internal Certificate Authority
     * **Randomize Serial:** Checked
     * **Common Name:** internal-vpn-ca
-    * Fill out the rest of the information as needed
-3. Navigate to **System > Certificate Manager > Certificates > Add/Sign**
+    * Fill out the rest of the information as needed.
+    * Save
+3. Add
 4. Enter the following data:
+    * **Descriptive name:** ExpressVPN CA
+    * **Method:** Import an existing Certificate Authority
+    * **Certificate data:** 
+      * Open one of the ExpressVPN .ovpn files and copy everything inbetween **\<ca\>** and **\</ca\>** and paste it into this text box.
+    * Save
+5. <span style="color:green">**Optional**, add the NordVPN CA certificate for OpenVPN -- Click **Add**</span>
+6. <span style="color:green">Enter the following data:</span>
+    * <span style="color:green">**Descriptive name:** NordVPN CA</span>
+    * <span style="color:green">**Method:** Import an existing Certificate Authority</span>
+    * <span style="color:green">**Certificate data:**</span><br>
+    ```
+    -----BEGIN CERTIFICATE-----
+    MIIFCjCCAvKgAwIBAgIBATANBgkqhkiG9w0BAQ0FADA5MQswCQYDVQQGEwJQQTEQ
+    MA4GA1UEChMHTm9yZFZQTjEYMBYGA1UEAxMPTm9yZFZQTiBSb290IENBMB4XDTE2
+    MDEwMTAwMDAwMFoXDTM1MTIzMTIzNTk1OVowOTELMAkGA1UEBhMCUEExEDAOBgNV
+    BAoTB05vcmRWUE4xGDAWBgNVBAMTD05vcmRWUE4gUm9vdCBDQTCCAiIwDQYJKoZI
+    hvcNAQEBBQADggIPADCCAgoCggIBAMkr/BYhyo0F2upsIMXwC6QvkZps3NN2/eQF
+    kfQIS1gql0aejsKsEnmY0Kaon8uZCTXPsRH1gQNgg5D2gixdd1mJUvV3dE3y9FJr
+    XMoDkXdCGBodvKJyU6lcfEVF6/UxHcbBguZK9UtRHS9eJYm3rpL/5huQMCppX7kU
+    eQ8dpCwd3iKITqwd1ZudDqsWaU0vqzC2H55IyaZ/5/TnCk31Q1UP6BksbbuRcwOV
+    skEDsm6YoWDnn/IIzGOYnFJRzQH5jTz3j1QBvRIuQuBuvUkfhx1FEwhwZigrcxXu
+    MP+QgM54kezgziJUaZcOM2zF3lvrwMvXDMfNeIoJABv9ljw969xQ8czQCU5lMVmA
+    37ltv5Ec9U5hZuwk/9QO1Z+d/r6Jx0mlurS8gnCAKJgwa3kyZw6e4FZ8mYL4vpRR
+    hPdvRTWCMJkeB4yBHyhxUmTRgJHm6YR3D6hcFAc9cQcTEl/I60tMdz33G6m0O42s
+    Qt/+AR3YCY/RusWVBJB/qNS94EtNtj8iaebCQW1jHAhvGmFILVR9lzD0EzWKHkvy
+    WEjmUVRgCDd6Ne3eFRNS73gdv/C3l5boYySeu4exkEYVxVRn8DhCxs0MnkMHWFK6
+    MyzXCCn+JnWFDYPfDKHvpff/kLDobtPBf+Lbch5wQy9quY27xaj0XwLyjOltpiST
+    LWae/Q4vAgMBAAGjHTAbMAwGA1UdEwQFMAMBAf8wCwYDVR0PBAQDAgEGMA0GCSqG
+    SIb3DQEBDQUAA4ICAQC9fUL2sZPxIN2mD32VeNySTgZlCEdVmlq471o/bDMP4B8g
+    nQesFRtXY2ZCjs50Jm73B2LViL9qlREmI6vE5IC8IsRBJSV4ce1WYxyXro5rmVg/
+    k6a10rlsbK/eg//GHoJxDdXDOokLUSnxt7gk3QKpX6eCdh67p0PuWm/7WUJQxH2S
+    DxsT9vB/iZriTIEe/ILoOQF0Aqp7AgNCcLcLAmbxXQkXYCCSB35Vp06u+eTWjG0/
+    pyS5V14stGtw+fA0DJp5ZJV4eqJ5LqxMlYvEZ/qKTEdoCeaXv2QEmN6dVqjDoTAo
+    k0t5u4YRXzEVCfXAC3ocplNdtCA72wjFJcSbfif4BSC8bDACTXtnPC7nD0VndZLp
+    +RiNLeiENhk0oTC+UVdSc+n2nJOzkCK0vYu0Ads4JGIB7g8IB3z2t9ICmsWrgnhd
+    NdcOe15BincrGA8avQ1cWXsfIKEjbrnEuEk9b5jel6NfHtPKoHc9mDpRdNPISeVa
+    wDBM1mJChneHt59Nh8Gah74+TM1jBsw4fhJPvoc7Atcg740JErb904mZfkIEmojC
+    VPhBHVQ9LHBAdM8qFI2kRK0IynOmAZhexlP/aT/kpEsEPyaZQlnBn3An1CRz8h0S
+    PApL8PytggYKeQmRhl499+6jLxcZ2IegLfqq41dzIjwHwTMplg+1pKIOVojpWA==
+    -----END CERTIFICATE-----
+    ```
+7. <span style="color:green">Save</span>
+8. Navigate to **System > Certificate Manager > Certificates > Add/Sign**
+9. Enter the following data:
     * **Method:** Create an internal Certificate
     * **Descriptive name:** Home CA - VPN
     * **Certificate authority:** Home CA
@@ -228,7 +279,7 @@ I will need you to find a few things before we start.
     * **Certificate Type:** Server Certificate
     * Fill out the rest of the information as needed
     * Save
-5. Create an additional Certificate:
+10. Create an additional Certificate:
     * **Method:** Create an internal Certificate
     * **Descriptive name:** Home CA - Proxy
     * **Certificate authority:** Home CA
@@ -236,9 +287,133 @@ I will need you to find a few things before we start.
     * **Certificate Type:** User Certificate
     * Fill out the rest of the information as needed
     * Save
-
+11. Create ExpressVPN Certificate:
+    * **Method:** Import an existing Certificate
+    * **Descriptive name:** ExpressVPN Cert
+    * **Certificate data:**
+      * Open one of the ExpressVPN .ovpn files and copy everything inbetween **\<cert\>** and **\</cert\>** and paste it into this text box
+    * **Certificate Private Key:** copy everything in between **\<key\>** and **\</key\>** and paste it into this text box
+    * Save
 
 ## OpenVPN Tunnels
 * This is where you and I might diverge a little. For OpenVPN I use ExpressVPN. NordVPN's support for OpenVPN drops a _lot_ of packets. I will cover setting up WireGuard with NordVPN in the next section.
-* In addition I will be pulling details from my production environment so if you see CA/Certs or subnets that conflict with what I previously told you, I will address them under the screenshots in a bullet point.
+* In addition, I will be pulling details from my production environment so if you see CA/Certs or subnets that conflict with what I previously told you, I will address them under the screenshots in a bullet point.
 1. Navigate to **VPN > OpenVPN > Clients > Add**
+2. Enter the following data:
+    * **Description:** ExpressVPN-\<city1\>
+    * **Server host or address:** Copy from city1's .ovpn file from value **remote**
+    * **Server port:** Copy from city1's .ovpn file from value **remote** -- Probably 1195
+    * **Username:** Copy from ExpressVPN's user dashboard
+    * **Password:** Copy from ExpressVPN's user dashboard <span style="color:yellow">-- Paste the password **ONCE**, not twice as mentioned in ExpressVPN documentation.</span>
+    * **TLS Configuration:** Uncheck **Automatically generate a TLS Key.**
+    * **TLS Key:** Copy from city1's .ovpn file and copy everything **UNCOMMENTED** inbetween **\<tls-auth\>** and **\</tls-auth>**
+    * **Peer Certificate Authority:** ExpressVPN CA
+    * **Client Certificate:** ExpressVPN Cert
+    * **Data Encryption Negotiation:** Uncheck
+    * **Data Encryption Algorithms:** Only allow **AES-256-CBC**
+    * **Auth digest algorithm:** SHA512
+    * **Don't pull routes:** Check
+    * **Interval:** 1 -- Yes, one.
+    * **Custom options:** These settings are non-standard, if anybody has found settings more stable, let me know!<br>
+    ```
+    persist-key;persist-tun;remote-random;pull;comp-lzo no;tls-client;verify-x509-name Server name-prefix;remote-cert-tls server;key-direction 1;route-method exe;route-delay 2;tun-mtu 1500;fragment 1300;mssfix 1450;sndbuf 524288;rcvbuf 524288
+    ```
+    * **UDP Fast I/O:** Despite what their instructions say, leave this unchecked.
+    * **Send/Receive Buffer:** 512KB
+        * This setting will be overwritted by the custom options, but it is best to mirror their information so if we have to troubleshoot later we do not have the wrong information. However, you will still have to remember that it is manually set. Removing the custom tag and selecting this option has not been successful.
+    * **Gateway creation:** IPv4 only
+    * **Verbosity level:** default
+        * This config should work out of the box, if you have problems, bump this number up to 4.
+        * You can find the logs under **Status > System Logs > OpenVPN** or clicking the **Related log entries** icon in the top right.
+3. Save
+4. Click the **Related statistics** icon in the top right.
+    * You should see something like this:<br>
+    ![venv-virtualbox-pfsense-vpn-city1.png](images/venv-virtualbox-pfsense-ovpn-city1.png)
+    * If you do not see this, you will have to refer to the related log entries.
+5. <span style="color:yellow">Do not forget to repeat the steps above for city2!</span>
+6. <span style="color:red">**Optional and unreliable -- Setup OpenVPN for NordVPN**</span>
+7. <span style="color:red">First, you will have to reset nordvpn to use OpenVPN</span>
+    * ```nordvpn set technology openvpn```
+8. <span style="color:red">Next, you will have to connect to a few NordVPN hosts to get some server names in your area for OpenVPN. When it connects it will give you a name like us1234. the full hostname would be us1234.nordvpn.com</span>
+9. <span style="color:red">Navigate to **VPN > OpenVPN > Clients > Add**</span>
+10. <span style="color:red">Enter the following data:</span>
+    * <span style="color:red">**Description:** NordVPN-\<city1\></span>
+    * <span style="color:red">**Server host or address:** Copy from your connection adventures in the format listed above.</span>
+    * <span style="color:red">**Server port:** 1194</span>
+    * <span style="color:red">**Username:** Your actual NordVPN login based on email.</span>
+    * <span style="color:red">**Password:** Your actual NordVPN login password.</span>
+    * <span style="color:red">**TLS Configuration:** Uncheck **Automatically generate a TLS Key.**</span>
+    * <span style="color:red">**TLS Key:</span><br>
+    ```
+    -----BEGIN OpenVPN Static key V1-----
+    e685bdaf659a25a200e2b9e39e51ff03
+    0fc72cf1ce07232bd8b2be5e6c670143
+    f51e937e670eee09d4f2ea5a6e4e6996
+    5db852c275351b86fc4ca892d78ae002
+    d6f70d029bd79c4d1c26cf14e9588033
+    cf639f8a74809f29f72b9d58f9b8f5fe
+    fc7938eade40e9fed6cb92184abb2cc1
+    0eb1a296df243b251df0643d53724cdb
+    5a92a1d6cb817804c4a9319b57d53be5
+    80815bcfcb2df55018cc83fc43bc7ff8
+    2d51f9b88364776ee9d12fc85cc7ea5b
+    9741c4f598c485316db066d52db4540e
+    212e1518a9bd4828219e24b20d88f598
+    a196c9de96012090e333519ae18d3509
+    9427e7b372d348d352dc4c85e18cd4b9
+    3f8a56ddb2e64eb67adfc9b337157ff4
+    -----END OpenVPN Static key V1-----
+    ```
+    * <span style="color:red">**Peer Certificate Authority:** NordVPN CA</span>
+    * <span style="color:red">**Client Certificate:** None</span>
+    * <span style="color:red">**Data Encryption Algorithms:** Allow **AES-256-CBC** and **AES-256-GCM**</span>
+    * <span style="color:red">**Auth digest algorithm:** SHA512</span>
+    * <span style="color:red">**Interval:** 1 -- Yes, one.</span>
+    * <span style="color:red">**Custom options:** Maybe there are more stable ones?</span><br>
+    ```
+    tls-client;
+    remote-random;
+    tun-mtu 1500;
+    tun-mtu-extra 32;
+    mssfix 1450;
+    persist-key;
+    persist-tun;
+    reneg-sec 0;
+    remote-cert-tls server;
+    ```
+    * <span style="color:red">**Gateway creation:** IPv4 only</span>
+    * <span style="color:red">**Verbosity level:** default</span>
+        * <span style="color:red">This config should also work out of the box, if you have problems, bump this number up to 4.</span>
+        * <span style="color:red">You can find the logs under **Status > System Logs > OpenVPN** or clicking the **Related log entries** icon in the top right.</span>
+    * <span style="color:red">Save</span>
+11. <span style="color:yellow">Do not forget to repeat the steps above for city2!</span>
+12. <span sytle="color:yellow">**Do not forget to reset nordvpn back to nordlynx!**</span><br>
+    ```nordvpn set technology nordlynx```
+## Service Watchdog
+1. Navigate to **Services > Service Watchdog**
+2. Add both OpenVPN clients.
+3. Add WireGuard.
+
+## WireGuard Tunnel
+1. Navigate to **VPN > WireGuard > Add Tunnel**
+2. Enter the following data:
+    * **Description:** NordVPN - \<city1\>
+    * **Listen Port:** 51820
+    * **Interface Keys: Click Generate
+    * **Interface Addresses:** Copy the endpoint IP address from either file (they're the same)
+    * Save Tunnel
+3. Navigate to **VPN > WireGuard > Peers > Add Peer**
+4. Enter the following data:
+    * **Tunnel:** tun_wg0
+    * **Description:** NordVPN Peer
+    * **Dynamic Endpoint:** Uncheck
+    * **Endpoint:** enter the same endpoint found while running ```nordvpn connect```
+    * **Keep Alive:** 25
+    * **Allowed IPs:** 0.0.0.0/0 -- NordVPN Allowed IPs
+    * Save Peer
+5. Navigate to **VPN > WireGuard > Settings**
+6. Check **Enable WireGuard**
+7. Save
+8. Navigate to **VPN > WireGuard Status**
+    * You should see something like this:<br>
+    ![venv-virtualbox-pfsense-wireguard-city1.png](images%2Fvenv-virtualbox-pfsense-wireguard-city1.png)
