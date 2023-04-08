@@ -37,7 +37,7 @@ This project contains the documentation on how to setup your pfSense firewall to
    * Dedicated connections for media devices to bypass VPN.
    * VPN Passthrough for IKE/IPSEC/OpenVPN.
    * Dial-in VPN Support
-   * DNSSEC
+   * DNS over SSL/TLS
 * Squid Proxy for site that do no like VPNs:
    * Includes instructions to setup a CA for HTTPS.
    * Includes wpad.dat / wpad.da / proxy.pac configuration via DHCP.
