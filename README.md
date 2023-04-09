@@ -49,7 +49,7 @@ This project contains the documentation on how to setup your pfSense firewall to
 * Custom DHCP options:
    * PXE.
    * Custom NFSroot options for NFSv3/v4.1.
-   * Automatic proxy configuration.
+   * Automatic proxy configuration. ✓
 * Whitebox instructions for pcengines.ch devices:
    * Firmware Updates.
    * Performance Improvements.
