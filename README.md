@@ -27,6 +27,7 @@ This project contains the documentation on how to setup your pfSense firewall to
     8. [Verify Default WAN Behavior](#verify-default-wan-behavior)
     9. [Setup DNS and SSL/TLS Outgoing DNS Queries](#setup-dns-and-ssltls-outgoing-dns-queries)
     10. [Section Conclusion](#section-conclusion)
+15. [Import to Production Environment](#import-to-production-environment)
 
 ## Features
 * Secure VPN:
@@ -57,7 +58,7 @@ This project contains the documentation on how to setup your pfSense firewall to
 * TODO:
    * Containerized Network Analysis Reports.
    * Fix proxy configs.
-   * Add drivers to WinPE for addition network card support.
+   * Add drivers to WinPE for additional network card support.
 
 ## Requirements
 * Hardware:
@@ -192,6 +193,9 @@ I will need you to find a few things before we start.
     17. Save this information from all 3 commands as you will need it later! I saved mine with my favorite text editor which wasn't installed:
         * ```sudo apt-get install vim```
     18. ```nordvpn disconnect```
+14. You will want to setup shared folders to export your new configuration for when you migrate to your production environment or to make life easier with other tasks
+    1. In virtualbox, navigate to: **Debian LiveCD > Settings > Shared Folders**
+    2. Map a folder to /mnt/shared
 
 ## Initial pfSense Setup
 1. Open an installed browser **Firefox/Chromium/Konqueror** and navigate to 192.168.1.1 (unless you had to change it above, however, I will be referring to it as 192.168.1.1 for the rest of this section).
@@ -201,13 +205,13 @@ I will need you to find a few things before we start.
 ![venv-virtualbox-pfsense-setup-wizard-1.png](images/venv-virtualbox-pfsense-setup-wizard-1.png)
     2. **Step 3**: NTP settings are safe to leave alone unless you have your own:
 ![venv-virtualbox-pfsense-setup-wizard-2.png](images/venv-virtualbox-pfsense-setup-wizard-2.png)
-    3. **Step 4**: This is where you can enter your current router's MAC address, being that it is on the LAN side of the actual broadcast domain, it will not impact your network. But it will save you from chasing your tail later:<br>
+    3. **Step 4**: This is where you should enter your current router's MAC address. Do it right now!
 ![venv-virtualbox-pfsense-setup-wizard-3.png](images/venv-virtualbox-pfsense-setup-wizard-3.png)
     4. **Step 5**: This is where you can change your local network from 192.168.1.1, we will be setting it to 192.168.5.1/24 for this virtual environment:<br>
 ![venv-virtualbox-pfsense-setup-wizard-4.png](images/venv-virtualbox-pfsense-setup-wizard-4.png)
     5. pfSense will now attempt to reload the page and fail. Disconnect and connect **Wired connection 1** from the task manager in the bottom right. Then navigate to **192.168.5.1**:<br>
 ![venv-virtualbox-gentoo-reset-network-1.png](images/venv-virtualbox-debian-reset-network-1.png)
-    6. At this point, the internet will start working through the Firewall in the Gentoo virtual machine. And it finished the general setup while the network was broken.
+    6. At this point, the internet will start working through the Firewall in the Debian virtual machine. And it finished the general setup while the network was broken.
 
 ## Make Initial pfSense Snapshot
 1. You will be making a lot of mistakes, the pfSense configuration can get 'stuck' or messed up from aggressive tinkering as of version 2.4.x. As an extra precaution, I like to create snapshots in stages in order to not have to chase a _Ghost in the Shell_. 
@@ -566,9 +570,28 @@ I will need you to find a few things before we start.
     * **DNS Query Forwarding**: Check **Use SSL/TLS for outgoing DNS Queries to Forwarding Servers**
 9. Save
 10. Apply Changes
-11. Take another snapshot, label it: **Initial VPN_WAN**
+11. Take another snapshot, label it: **VPN_WAN**
 
 ### Section Conclusion
-* If your goal is to just have secure internet, you can stop here. However, if you want all the other bells and whistles used in IT Support, carry on!
+* If your goal is to just have secure internet, you can stop here and skip forward to this section. However, if you want all the other bells and whistles used in IT Support, carry on!
 * Even though when we setup openvpn we selected no hardware acceleration, that is a falsehood, it will use AES-NI as we specified in the config before we fisnished.
 
+## Import to Production Environment
+* This section will show you how to take your config as it stands now and import it onto your hardware device.
+1. Using the Debian virtual machine, navigate to: http://192.168.5.1
+2. Navigate to: **Diagnostics > Backup & Restore**
+3. Select: **Backup extra data**
+4. Click: **Download configuration as XML**
+5. Run: ```sudo cp $HOME/Downloads/config-pfSense* /mnt/shared/```
+6. Navigate to your production environment's pfSense address
+7. Navigate to: **Diagnostics > Backup & Restore**
+8. Browse to the location of your shared folder locally and select the configuration version
+9. The firewall will reboot, come back to it in 10 minutes ideally for it to install everything and settle down.
+    * Your IP scheme, hostname and Domain will need to be updated to what you prefer locally. This may be able to be updated in the configuration file via ```sed``` if you are ambitious. But it is unknown what impacts that will have on the rest of the services looking for IPs/Networks. Use the GUI.
+10. Navigate to: **System > General Setup
+11. Update your Hostname and Domain
+12. Save
+13. Navigate to: **Interfaces > LAN**
+14. Update your IP Address
+15. Save
+16. Apply Changes
