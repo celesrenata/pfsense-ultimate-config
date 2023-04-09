@@ -727,6 +727,7 @@ I will need you to find a few things before we start.
 21. Edit the User you created
 22. Scroll to the bottom and paste your new pre-shared key
 23. Setup a client that is in your home network currently and attempt to connect to the current pfSense **WAN** IP.
+24. Take another snapshot and label it: **VPN Options**
 ## ![optional-2.png](images/optional-2.png)
 
 ## Import to Production Environment
