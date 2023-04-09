@@ -27,7 +27,10 @@ This project contains the documentation on how to setup your pfSense firewall to
     8. [Verify Default WAN Behavior](#verify-default-wan-behavior)
     9. [Setup DNS and SSL/TLS Outgoing DNS Queries](#setup-dns-and-ssltls-outgoing-dns-queries)
     10. [Section Conclusion](#section-conclusion)
-15. [Import to Production Environment](#import-to-production-environment)
+15. [Setup Bypass Proxy](#setup-bypass-proxy)
+16. [Setup Static DHCP Entries to Force Gateways Per Host](#setup-static-dhcp-entries-to-force-gateways-per-host)
+17. [Dial-in VPN Support](#dial-in-vpn-support)
+18. [Import to Production Environment](#import-to-production-environment)
 
 ## Features
 * Secure VPN:
@@ -36,13 +39,13 @@ This project contains the documentation on how to setup your pfSense firewall to
    * Wireguard with hardware acceleration. ✓
    * Details on how to connect to ExpressVPN and NordVPN. ✓
    * Load Balancing. ✓
-   * Dedicated connections for media devices to bypass VPN.
-   * VPN Passthrough for IKE/IPSEC/OpenVPN.
-   * Dial-in VPN Support
+   * Dedicated connections for media devices to bypass VPN. ✓
+   * VPN Passthrough for IKE/IPSEC/OpenVPN. ✓
+   * Dial-in VPN Support ✓
    * DNS over SSL/TLS ✓
 * Squid Proxy for sites that do no like VPNs:
-   * Includes instructions to setup a CA for HTTPS.
-   * Includes wpad.dat / wpad.da / proxy.pac configuration via DHCP.
+   * Includes instructions to setup a CA for HTTPS. ✓
+   * Includes wpad.dat / wpad.da / proxy.pac configuration via DHCP. ✓
 * Custom DHCP options:
    * PXE.
    * Custom NFSroot options for NFSv3/v4.1.
@@ -57,7 +60,6 @@ This project contains the documentation on how to setup your pfSense firewall to
 * Network Analysis via Traffic Totals.
 * TODO:
    * Containerized Network Analysis Reports.
-   * Fix proxy configs.
    * Add drivers to WinPE for additional network card support.
 
 ## Requirements
@@ -198,7 +200,7 @@ I will need you to find a few things before we start.
     2. Map a folder to /mnt/shared
 
 ## Initial pfSense Setup
-1. Open an installed browser **Firefox/Chromium/Konqueror** and navigate to 192.168.1.1 (unless you had to change it above, however, I will be referring to it as 192.168.1.1 for the rest of this section).
+1. Open an installed browser **Firefox/Chromium/Konqueror** and Navigate to:192.168.1.1 (unless you had to change it above, however, I will be referring to it as 192.168.1.1 for the rest of this section).
 2. Login to pfSense using the default login credentials: **admin / pfsense**
 3. Follow the general setup instructions and make changes on steps I highlight below:
     1. **Step 2**: Setup the hostname and search domain of your firewall, for this I use **pfSense** and **virtualhome.local**:<br>
@@ -209,7 +211,7 @@ I will need you to find a few things before we start.
 ![venv-virtualbox-pfsense-setup-wizard-3.png](images/venv-virtualbox-pfsense-setup-wizard-3.png)
     4. **Step 5**: This is where you can change your local network from 192.168.1.1, we will be setting it to 192.168.5.1/24 for this virtual environment:<br>
 ![venv-virtualbox-pfsense-setup-wizard-4.png](images/venv-virtualbox-pfsense-setup-wizard-4.png)
-    5. pfSense will now attempt to reload the page and fail. Disconnect and connect **Wired connection 1** from the task manager in the bottom right. Then navigate to **192.168.5.1**:<br>
+    5. pfSense will now attempt to reload the page and fail. Disconnect and connect **Wired connection 1** from the task manager in the bottom right. Then Navigate to:**192.168.5.1**:<br>
 ![venv-virtualbox-gentoo-reset-network-1.png](images/venv-virtualbox-debian-reset-network-1.png)
     6. At this point, the internet will start working through the Firewall in the Debian virtual machine. And it finished the general setup while the network was broken.
 
@@ -225,7 +227,7 @@ I will need you to find a few things before we start.
 ![venv-virtualbox-pfsense-initial-snapshot-1.png](images/venv-virtualbox-pfsense-initial-snapshot-1.png)
 
 ## Install pfSense 3rd Party Packages
-1. Navigate to **System > Package Manger > Available Packages**
+1. Navigate to:**System > Package Manger > Available Packages**
 2. Install the following packages:
     * Filer
     * nmap
@@ -238,7 +240,7 @@ I will need you to find a few things before we start.
 
 ## Create CA and Certificates
 * <span style="color:red">**From this point forward in the documentation, if I omit details about configuring something, it means I leave it at its default values.**</span>
-1. Navigate to **System > Certificate Manager > Add**
+1. Navigate to:**System > Certificate Manager > Add**
 2. Enter the following data:
     * **Descriptive name:** Home CA
     * **Method:** Create an internal Certificate Authority
@@ -291,7 +293,7 @@ I will need you to find a few things before we start.
     ```
 7. <span style="color:green">Save</span><br>
 ![optional-2.png](images%2Foptional-2.png)
-8. Navigate to **System > Certificate Manager > Certificates > Add/Sign**
+8. Navigate to:**System > Certificate Manager > Certificates > Add/Sign**
 9. Enter the following data:
     * **Method:** Create an internal Certificate
     * **Descriptive name:** Home CA - VPN
@@ -319,7 +321,7 @@ I will need you to find a few things before we start.
 ## OpenVPN Tunnels
 * This is where you and I might diverge a little. For OpenVPN I use ExpressVPN. NordVPN's support for OpenVPN drops a _lot_ of packets. I will cover setting up WireGuard with NordVPN in the next section.
 * In addition, I will be pulling details from my production environment so if you see CA/Certs or subnets that conflict with what I previously told you, I will address them under the screenshots in a bullet point.
-1. Navigate to **VPN > OpenVPN > Clients > Add**
+1. Navigate to:**VPN > OpenVPN > Clients > Add**
 2. Enter the following data:
     * **Description:** ExpressVPN-\<city1\>
     * **Server host or address:** Copy from city1's .ovpn file from value **remote**
@@ -356,7 +358,7 @@ I will need you to find a few things before we start.
 7. <span style="color:red">First, you will have to reset nordvpn to use OpenVPN</span>
     * ```nordvpn set technology openvpn```
 8. <span style="color:red">Next, you will have to connect to a few NordVPN hosts to get some server names in your area for OpenVPN. When it connects it will give you a name like us1234. the full hostname would be us1234.nordvpn.com</span>
-9. <span style="color:red">Navigate to **VPN > OpenVPN > Clients > Add**</span>
+9. <span style="color:red">Navigate to:**VPN > OpenVPN > Clients > Add**</span>
 10. <span style="color:red">Enter the following data:</span>
     * <span style="color:red">**Description:** NordVPN-\<city1\></span>
     * <span style="color:red">**Server host or address:** Copy from your connection adventures in the format listed above.</span>
@@ -413,18 +415,18 @@ I will need you to find a few things before we start.
 ![optional-2.png](images/optional-2.png)
 
 ## Service Watchdog
-1. Navigate to **Services > Service Watchdog**
+1. Navigate to:**Services > Service Watchdog**
 2. Add both OpenVPN clients.
 3. Add WireGuard.
 
 ## WireGuard Tunnel
-1. Navigate to **VPN > WireGuard > Add Tunnel**
+1. Navigate to:**VPN > WireGuard > Add Tunnel**
 2. Enter the following data:
     * **Description:** NordVPN - \<city1\>
     * **Listen Port:** 51820
     * **Interface Keys:** Copy the private key from ```wg showconf nordlynx```
     * Save Tunnel
-3. Navigate to **VPN > WireGuard > Peers > Add Peer**
+3. Navigate to:**VPN > WireGuard > Peers > Add Peer**
 4. Enter the following data:
     * **Tunnel:** tun_wg0
     * **Description:** NordVPN Peer
@@ -434,10 +436,10 @@ I will need you to find a few things before we start.
     * **Public Key:** Copy from ```wg showconf nordlynx```
     * **Allowed IPs:** 0.0.0.0/0 -- NordVPN Allowed IPs
     * Save Peer
-5. Navigate to **VPN > WireGuard > Settings**
+5. Navigate to:**VPN > WireGuard > Settings**
 6. Check **Enable WireGuard**
 7. Save
-8. Navigate to **VPN > WireGuard Status**
+8. Navigate to:**VPN > WireGuard Status**
     * You should see something like this:<br>
     ![venv-virtualbox-pfsense-wireguard-city1.png](images%2Fvenv-virtualbox-pfsense-wireguard-city1.png)
 9. Take another snapshot of the pfSense virtual machine and label it: **VPN Config**
@@ -445,10 +447,10 @@ I will need you to find a few things before we start.
 ## Redirecting all WAN bound traffic through VPNs
 
 ### Create VPN Interfaces
-1. Navigate to **Interfaces > Interface Assignments**
+1. Navigate to:**Interfaces > Interface Assignments**
 2. Add both ExpressVPN tunnels and the NordVPN tunnel. -- **Make note of their names in relation to what tunnel they are!**
 3. Save
-4. Navigate to **Interfaces > OPT1**
+4. Navigate to:**Interfaces > OPT1**
 5. Enter the following data:
     * **Enable:** Check
     * **Description:** ExpressVPN-city1 or ExpressVPN-city2 or NordVPN-city1 depending on which you mapped first.
@@ -464,7 +466,7 @@ I will need you to find a few things before we start.
 12. Save
 
 ### Create Gateway for WireGuard
-1. Navigate to **System > Routing > Gateways**
+1. Navigate to:**System > Routing > Gateways**
 2. Add
 3. Enter the following data:
     * **Disabled:** Uncheck
@@ -480,7 +482,7 @@ I will need you to find a few things before we start.
 8. Apply Changes
 
 ### Edit Gateways for OpenVPN
-1. Navigate to **System > Routing > Gateways**
+1. Navigate to:**System > Routing > Gateways**
 2. Edit **EXPRESSVPNCITY1**
 3. Add Monitor IP: 208.67.222.222 -- ExpressVPN DNS VIP
 4. Click **Display Advanced**
@@ -494,7 +496,7 @@ I will need you to find a few things before we start.
 12. Apply Changes
 
 ### Test VPN Connectivity
-1. Navigate to **Diagnostics > Ping**
+1. Navigate to:**Diagnostics > Ping**
 2. Enter the following data:
     * **Hostname:** google.com, a known ICMP responder.
     * **Source address:** Try each of your new gateways. EXPRESSCITY1 / EXPRESSCITY2 / NORDVPNCITY1
@@ -502,7 +504,7 @@ I will need you to find a few things before we start.
 4. Repeat for All VPNs
 
 ### Create Gateway Group
-1. Navigate to **System > Routing > Gateways > Gateway Groups**
+1. Navigate to:**System > Routing > Gateways > Gateway Groups**
 2. Add
 3. Enter the following data:
     * **Group Name:** Outbound_VPN_Group
@@ -515,7 +517,7 @@ I will need you to find a few things before we start.
 4. Save
 
 ### Update NAT Settings
-1. Navigate to **Firewall > NAT > Outbound**
+1. Navigate to:**Firewall > NAT > Outbound**
 2. Select **Manual Outbound NAT rule generation**
 3. Save
 4. Apply Changes
@@ -530,7 +532,7 @@ I will need you to find a few things before we start.
 9. Apply Changes
 
 ### Update Firewall Rules
-1. Navigate to **Firewall > Rules > LAN**
+1. Navigate to:**Firewall > Rules > LAN**
 2. Click **Edit icon** on the rule with the description: "Default allow LAN to any rule"
 3. Click **Advanced Options**
 4. Update **Gateway** to **Outbound_VPN_Group**
@@ -538,19 +540,19 @@ I will need you to find a few things before we start.
 6. Apply Changes
 
 ### Setup Load Balancing
-1. Navigate to **System > Advanced > Miscellaneous**
+1. Navigate to:**System > Advanced > Miscellaneous**
 2. Enter the following data:
     * **Load Balancing:** Use sticky connections -- 360 seconds (adjust as needed later)
     * **Cryptographic Hardware:** AES-NI CPU-based Acceleration
 3. Save
-4. Navigate to **Diagnostics > Reboot**
+4. Navigate to:**Diagnostics > Reboot**
 5. Submit
 
 ### Verify Default WAN Behavior
-1. Navigate to https://www.google.com -- **search:** what is my ip
+1. Navigate to:https://www.google.com -- **search:** what is my ip
     * If you already got flagged with a captcha, you don't even need to bother, you are on a VPN!
 2. Compare the IP listed with your WAN IP, if it is different, it is using a VPN
-3. Navigate to **Status > Gateways**
+3. Navigate to:**Status > Gateways**
 4. You should see something like this:<br>
 ![venv-virtualbox-pfsense-gateway-status.png](images/venv-virtualbox-pfsense-gateway-status.png)
 5. Click **Gateway Groups**
@@ -558,13 +560,13 @@ I will need you to find a few things before we start.
 ![venv-virtualbox-pfsense-gateway-group-status.png](images/venv-virtualbox-pfsense-gateway-group-status.png)
 
 ### Setup DNS and SSL/TLS Outgoing DNS Queries
-1. Navigate to **System > General Setup**
+1. Navigate to:**System > General Setup**
 2. Add DNS servers for your VPN Connections
 3. ExpressVPN uses: **208.67.220.220, 208.67.222.222** which is opendns.com
 4. NordVPN **instead** will use: **1.1.1.1, 1.0.0.1** which is cloudflare-dns.com
 5. WAN **instead** will use: **8.8.4.4** which is dns.google -- yes, dns.google.
 6. Save
-7. Navigate to **Services > DNS Resolver**
+7. Navigate to:**Services > DNS Resolver**
 8. Enter the following data:
     * **DNSSEC:** Disable
     * **DNS Query Forwarding**: Check **Use SSL/TLS for outgoing DNS Queries to Forwarding Servers**
@@ -576,6 +578,157 @@ I will need you to find a few things before we start.
 * If your goal is to just have secure internet, you can stop here and skip forward to this section. However, if you want all the other bells and whistles used in IT Support, carry on!
 * Even though when we setup openvpn we selected no hardware acceleration, that is a falsehood, it will use AES-NI as we specified in the config before we fisnished.
 
+## Setup Bypass Proxy
+![optional-1.png](images/optional-1.png)
+* Are you tired of seeing this?<br>
+![captcha.png](images/captcha.png)
+* Below in this optional step I will poke a hole in your VPN setup to make life less frustrating.
+1. On your Debian virtual machine you will want to login to the pfSense portal
+2. Navigate to: **Diagnostics > Filer**
+3. Add
+4. Enter the following data:
+    * **File:** /usr/local/www/proxy.pac
+    * **Description:** VPN Bypass Proxy Config
+    * **File Contents:**
+    ```
+    function FindProxyForURL(url, host) 
+    { 
+    
+    //
+    //If they only have a specified host name, go directly.
+    //
+    if (isPlainHostName(host))
+        return "DIRECT"; 
+    else if (shExpMatch(host, "*.google.com")) 
+        return "PROXY 192.168.5.1:3128" ;
+    else if (shExpMatch(host, "*.tidal.com")) 
+        return "PROXY 192.168.5.1:3128" ;
+    else if (shExpMatch(host, "*.amazon.com")) 
+        return "PROXY 192.168.5.1:3128" ;
+    else if (shExpMatch(host, "*.gstatic.com")) 
+        return "PROXY 192.168.5.1:3128" ;
+    else 
+        return "DIRECT";
+    }
+    ```
+5. Save
+6. Repeat this process for **/usr/local/www/wpad.dat** and **/usr/local/www/wpad.da**
+    * Symlinking would be lost when migrating to your production environment<br>
+    ![important-1.png](images/important-1.png)
+    * This file uses the subnet of the virtualhome.local network, you will want to update this to your production subnet later -- **Reasons for using ```sed```.**<br>
+![important-2.png](images/important-2.png)
+7. Navigate to: **System > Cert Manager**
+8. Click: **Export CA** icon -- it should look like a sun.
+9. Open that file in your favorite text editor
+10. Navigate to: **Diagnostics > Filer**
+11. Add
+12. Enter the following data:
+    * **File:** /usr/local/www/home.ca
+    * **Description:** Home CA
+    * **File Contents:** Paste the contents of the file you just opened previously in your text editor.
+13. Save
+    * This will give you a place to install the certificate on guest systems without risking your login credentials to guest devices.
+14. Navigate to: **Services > Squid Proxy Server > Local Cache**
+15. Save -- This step is required to setup the squid cache before starting the service.
+16. Navigate to: **Services > Squid Proxy Server > Local General**
+17. Enter the following data:
+    * **Enable Squid Proxy:** Checked
+    * **Outgoing Network Interface:** WAN
+    * **Extra Trusted CA:** Home CA
+    * **Enable Access Logging:** Checked
+18. Navigate to: **Services > DHCP Server**
+19. Expand **Additional BOOTP/DHCP Options, click Add, 2 times.
+20. Enter the following data (including the quotes): -- **Reasons for using ```sed``` intensify.**
+    * **Option:** 252 -- String -- "http://192.168.5.1/wpad.dat"
+    * **Option:** 252 -- String -- "http://192.168.5.1/wpad.da"
+    * **Option:** 252 -- String -- "http://192.168.5.1/proxy.pac"
+21. Save
+22. In Firefox, press the **alt/option** key
+23. Navigate to: **Edit > Settings > Search "cert" > View Certificates > Import**
+24. There will be a dropdown in the bottom right, adjust that to: **Certificate Files**
+25. Click Downloads
+26. Import ```Home+CA.crt```
+27. Check: **Trust this CA to identify websites.**
+28. OK
+29. OK
+30. Cycle your network interface from the task manager.
+31. Search "proxy"
+32. Click: **Settings**
+33. Click: **Auto-detect proxy settings for this network**
+34. Open VirtualBox and navigate to pfSense virtual machine console window
+35. Choose option **8**
+36. ```tail -f /var/squid/logs/access.log```
+37. Navigate back to Debian virtual machine and try loading: **https://tidal.com** -- Tidal disallows proxies
+38. If the page loads, this is a good sign
+39. Navigate back to the virtual machine running: ```tail -f /var/squid/logs/access```
+    * You should see something like this:<br>
+![venv-virtualbox-pfsense-squid-tail.png](images/venv-virtualbox-pfsense-squid-tail.png)
+    * If you do, congratulations, less captchas!
+    * You will have to edit these files time to time as you explore the internet behind VPNs. These settings will update for the entire network. You will have to add your CA cert to any device that you plan on using with this proxy service, once added you can update their network settings to use automatic proxy configuration!<br>
+
+## Setup Static DHCP Entries to Force Gateways Per Host
+* Maybe this proxy configuration doesn't work for you, maybe you just want to force certain devices to use VPN or WAN.
+1. From the Debian virtual machine
+2. Navigate to: **http://182.168.5.1** and login
+3. Navigate to: **Status / DHCP Leases**
+4. Find your device and click the light colored **plus** icon next to it
+5. Enter the following data:
+    * **IP Address:** An IP outside of your dynamic range set in **Services > DHCP Server**
+    * **Hostname:** Choose something you can remember so you don't have to come back here
+    * **Description:** If you do have to come back here, at least setup a description so you know what that host does!
+6. Save
+7. Apply Changes
+8. Navigate to: **Firewall > Rules > LAN**
+9. Add to top
+10. Enter the following data:
+    * **Source:** Single host or alias -- the IP you just made static
+11. Under **Extra Options**, expand **Display Advanced**
+12. Select the gateway you want from the dropdown near the bottom of the page.
+13. Reset the networking on your target device
+
+## Dial-in VPN Support
+* I will setup an IPSEC tunnel for mobile login, however you can just as easily do it with **OpenVPN** as there is an export package available called **openvpn-client-export** to allow devices using OpenVPN to dial in without the fuss.
+1. From the Debian virtual machine
+2. Navigate to: **http://182.168.5.1** and login
+3. Navigate to: **System > Users**
+4. Add
+5. Enter the following data:
+    * **Username:** _You_
+    * **Password:** _Your Password_
+6. Save
+7. Edit what you just created
+8. Under **Effective Privileges** click **Add**
+9. Select: **User - VPN: IPsec xauth Dialin**
+10. Save
+11. Navigate to: **Mobile Clients**
+12. Enter the following data:
+    * **Enable IPsec Mobile Client Support:** Check
+    * **User Authentication:** Click **Local Database**
+    * **Group Authentication:** Check
+    * **Authentication Groups:** System Administrators, and User - VPN: IPsec with Dialin, if displayed
+    * **Virtual Address Pool:** Check
+      * 192.168.6.0 / 24 -- This may be desired to change later, if so ```sed?```
+    * **Network List:** Check
+    * **DNS Servers:** Check
+      * **Server #1:** 192.168.5.1 -- ```sed!```
+13. Save
+14. Appply Changes
+15. Create Phase 1
+16. Enter the following data:
+    * **Description:** VPN Server Phase 1
+    * **Key Exchange version:** IKEv1 -- I've had problems using IKEv2, if you know better, let me know!
+    * **Authentication Method:** Mutual PSK + Xauth
+    * **Peer identifier:** Any
+    * **NAT Traversal:** Force
+17. Click **Generate new Pre-Shared Key** -- Copy this down!
+18. Save
+19. Apply Changes
+20. Navigate to: **System > User Manager**
+21. Edit the User you created
+22. Scroll to the bottom and paste your new pre-shared key
+23. Setup a client that is in your home network currently and attempt to connect to the current pfSense **WAN** IP.
+## ![optional-2.png](images/optional-2.png)
+
 ## Import to Production Environment
 * This section will show you how to take your config as it stands now and import it onto your hardware device.
 1. Using the Debian virtual machine, navigate to: http://192.168.5.1
@@ -583,7 +736,7 @@ I will need you to find a few things before we start.
 3. Select: **Backup extra data**
 4. Click: **Download configuration as XML**
 5. Run: ```sudo cp $HOME/Downloads/config-pfSense* /mnt/shared/```
-6. Navigate to your production environment's pfSense address
+6. Navigate to:your production environment's pfSense address
 7. Navigate to: **Diagnostics > Backup & Restore**
 8. Browse to the location of your shared folder locally and select the configuration version
 9. The firewall will reboot, come back to it in 10 minutes ideally for it to install everything and settle down.
