@@ -30,15 +30,15 @@ This project contains the documentation on how to setup your pfSense firewall to
 
 ## Features
 * Secure VPN:
-   * VPN aggregation with WAN fail over.
-   * OpenVPN with hardware acceleration.
-   * Wireguard with hardware acceleration.
-   * Details on how to connect to ExpressVPN and NordVPN.
-   * Load Balancing.
+   * VPN aggregation with WAN fail over. ✓
+   * OpenVPN with hardware acceleration. ✓
+   * Wireguard with hardware acceleration. ✓
+   * Details on how to connect to ExpressVPN and NordVPN. ✓
+   * Load Balancing. ✓
    * Dedicated connections for media devices to bypass VPN.
    * VPN Passthrough for IKE/IPSEC/OpenVPN.
    * Dial-in VPN Support
-   * DNS over SSL/TLS
+   * DNS over SSL/TLS ✓
 * Squid Proxy for sites that do no like VPNs:
    * Includes instructions to setup a CA for HTTPS.
    * Includes wpad.dat / wpad.da / proxy.pac configuration via DHCP.
@@ -537,6 +537,7 @@ I will need you to find a few things before we start.
 1. Navigate to **System > Advanced > Miscellaneous**
 2. Enter the following data:
     * **Load Balancing:** Use sticky connections -- 360 seconds (adjust as needed later)
+    * **Cryptographic Hardware:** AES-NI CPU-based Acceleration
 3. Save
 4. Navigate to **Diagnostics > Reboot**
 5. Submit
@@ -569,4 +570,5 @@ I will need you to find a few things before we start.
 
 ### Section Conclusion
 * If your goal is to just have secure internet, you can stop here. However, if you want all the other bells and whistles used in IT Support, carry on!
+* Even though when we setup openvpn we selected no hardware acceleration, that is a falsehood, it will use AES-NI as we specified in the config before we fisnished.
 
