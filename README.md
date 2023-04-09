@@ -23,9 +23,10 @@ This project contains the documentation on how to setup your pfSense firewall to
     4. [Create Gateway Group](#create-gateway-group)
     5. [Update NAT Settings](#update-nat-settings)
     6. [Update Firewall Rules](#update-firewall-rules)
-    7. [Verify Default WAN Behavior](#verify-default-wan-behavior)
-    8. [Setup DNS and SSL/TLS Outgoing DNS Queries](#setup-dns-and-ssltls-outgoing-dns-queries)
-    9. [Section Conclusion](#section-conclusion)
+    7. [Setup Load Balancing](#setup-load-balancing)
+    8. [Verify Default WAN Behavior](#verify-default-wan-behavior)
+    9. [Setup DNS and SSL/TLS Outgoing DNS Queries](#setup-dns-and-ssltls-outgoing-dns-queries)
+    10. [Section Conclusion](#section-conclusion)
 
 ## Features
 * Secure VPN:
@@ -38,7 +39,7 @@ This project contains the documentation on how to setup your pfSense firewall to
    * VPN Passthrough for IKE/IPSEC/OpenVPN.
    * Dial-in VPN Support
    * DNS over SSL/TLS
-* Squid Proxy for site that do no like VPNs:
+* Squid Proxy for sites that do no like VPNs:
    * Includes instructions to setup a CA for HTTPS.
    * Includes wpad.dat / wpad.da / proxy.pac configuration via DHCP.
 * Custom DHCP options:
@@ -531,8 +532,14 @@ I will need you to find a few things before we start.
 4. Update **Gateway** to **Outbound_VPN_Group**
 5. Save
 6. Apply Changes
-7. Navigate to **Diagnostics > Reboot**
-8. Submit
+
+### Setup Load Balancing
+1. Navigate to **System > Advanced > Miscellaneous**
+2. Enter the following data:
+    * **Load Balancing:** Use sticky connections -- 360 seconds (adjust as needed later)
+3. Save
+4. Navigate to **Diagnostics > Reboot**
+5. Submit
 
 ### Verify Default WAN Behavior
 1. Navigate to https://www.google.com -- **search:** what is my ip
