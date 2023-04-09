@@ -80,7 +80,7 @@ This project contains the documentation on how to setup your pfSense firewall to
 ## Before We Start
 The process is to build up a virtual environment using your new configuration we build together so you don't break your internet connection unintentionally. You can use VMware Fusion/Workstation/ESXi or Microsoft HyperV, but I'm going with an open source platform agnostic solution here.<br><br>
 I will need you to find a few things before we start.
-1. Figure out if your internet provider's WAN configuration, if you don't know it is probably DHCP. Find the WAN MAC Address of your current router and write it down!<br>
+1. Figure out your internet provider's WAN configuration. If you don't know, it is probably DHCP. Find the WAN MAC Address of your current router and write it down!<br>
 ![Spoiler alert: If you don't write down current router's MAC address, you are going to have a bad time](images/meme-macaddress.jpeg)
 2. Be prepared for configuration corruption and using snapshots of your pfSense install as you tinker with it. Once we create a configuration you are happy with we can export it and apply it to your production environment.
 3. Also be prepared that your current VPN provider might suck. You will want to research what VPN providers in your area you want to use, as well as seeing how flexible they are at sending a ton of data through their network.
