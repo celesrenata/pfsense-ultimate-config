@@ -623,7 +623,7 @@ I will need you to find a few things before we start.
 10. Navigate to: **Diagnostics > Filer**
 11. Add
 12. Enter the following data:
-    * **File:** /usr/local/www/home.ca
+    * **File:** /usr/local/www/home.crt
     * **Description:** Home CA
     * **File Contents:** Paste the contents of the file you just opened previously in your text editor.
 13. Save
