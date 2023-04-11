@@ -30,6 +30,9 @@ This project contains the documentation on how to set up your pfSense firewall t
 15. [Setup Bypass Proxy](#setup-bypass-proxy)
 16. [Setup Static DHCP Entries to Force Gateways Per Host](#setup-static-dhcp-entries-to-force-gateways-per-host)
 17. [Dial-in VPN Support](#dial-in-vpn-support)
+18. [Setup Virtual Container Server](#setup-virtual-container-server)
+    1. [Install Required Software](#install-required-software)
+    2. [Initial iPXE Setup](#initial-ipxe-setup)
 18. [Import to Production Environment](#import-to-production-environment)
 
 ## Features
@@ -47,7 +50,8 @@ This project contains the documentation on how to set up your pfSense firewall t
    * Includes instructions to set up a CA for HTTPS. ✓
    * Includes wpad.dat / wpad.da / proxy.pac configuration via DHCP. ✓
 * Custom DHCP options:
-   * PXE.
+   * PXE. ✓
+   * Custom iPXE Menus.
    * Custom NFSroot options for NFSv3/v4.1.
    * Automatic proxy configuration. ✓
 * Whitebox instructions for pcengines.ch devices:
@@ -759,45 +763,45 @@ I will need you to find a few things before we start.
 ![optional-1.png](images/important-2.png)
 17. ```mkdir -p docker-maps/netbootxyz/{config,assets}```
 18. ```docker run -d -p 3000:3000 -p 69:69/udp -p 8080:80 --name netbootxyz --restart=always -v /home/$USER/docker-maps/assets -v /home/$USER/docker-maps/config ghcr.io/netbootxyz/netbootxyz```
-19. Navigate to: **http://192.168.5.1**
-20. Login
-21. Navigate to: **Status > DHCP Leases**
-22. Find your Debian virtual machine and click the light colored **plus** icon next to it
-23. Enter the following data:
+### Initial iPXE Setup
+1. Navigate to: **http://192.168.5.1**
+2. Login
+3. Navigate to: **Status > DHCP Leases**
+4. Find your Debian virtual machine and click the light colored **plus** icon next to it
+5. Enter the following data:
     * **IP Address:** 192.168.5.2**
     * **Hostname:** Choose something you can remember, so you don't have to come back here
     * **Description:** If you do have to come back here, at least set up a description that way you know what that host does!
-24. Save
-25. Apply Changes
-26. Restart the networking connection on your Debian virtual machine to update to the new address.
-27. Navigate to: **http://localhost:3000**
-28. If this page loads, as it should. You now have netboot.xyz installed!
-29. Navigate to: **http://192.168.5.1**
-30. Login
-31. Navigate to: **Services > DHCP Server**
-32. Expand advanced options under **TFTP**
-33. Expand advanced options under **Network Booting**
-34. Enter the following data:
+6. Save
+7. Apply Changes
+8. Restart the networking connection on your Debian virtual machine to update to the new address.
+9. Navigate to: **http://localhost:3000**
+10. If this page loads, as it should. You now have netboot.xyz installed!
+11. Navigate to: **http://192.168.5.1**
+12. Login
+13. Navigate to: **Services > DHCP Server**
+14. Expand advanced options under **TFTP**
+15. Expand advanced options under **Network Booting**
+16. Enter the following data:
     * **TFTP Server:** 192.168.5.2
     * **Default BIOS file name:** netboot.xyz.kpxe
     * **UEFI 32 bit file name:** netboot.xyz.efi
     * **UEFI 64 bit file name:** netboot.xyz.efi
-35. Save
-36. Navigate to **VirtualBox**
-37. Create a new Virtual Machine
-38. Label it: **PXE Test**
-39. Expand: **Hard Disk**
-40. Click: **Do Not Add a Virtual Hard Disk**
-41. Finish
-42. Edit the settings of your new virtual machine
-43. Change type to **Other** and version to **Other/Unknown (64-bit)**
+17. Save
+18. Navigate to **VirtualBox**
+19. Create a new Virtual Machine
+20. Label it: **PXE Test**
+21. Expand: **Hard Disk**
+22. Click: **Do Not Add a Virtual Hard Disk**
+23. Finish
+24. Edit the settings of your new virtual machine
+25. Change type to **Other** and version to **Other/Unknown (64-bit)**
     * This is in hopes of allowing the boot of any type of opera
-44. Click on the **System** tab and enable Network boot
-45. Click on the **Network** tab update to use the **internal network,** select the **pfsense** network
-46. Okay
-47. Start
+26. Click on the **System** tab and enable Network boot
+27. Click on the **Network** tab update to use the **internal network,** select the **pfsense** network
+28. Okay
+29. Start
     * You should see the iPXE menu come up. If you do, you now have a basic netboot.xyz setup!
-
 ## ![optional-2.png](images/optional-2.png)
 
 
