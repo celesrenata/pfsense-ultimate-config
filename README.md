@@ -54,7 +54,7 @@ This project contains the documentation on how to setup your pfSense firewall to
    * Firmware Updates.
    * Performance Improvements.
 * Containerized PXE boot with netboot.xyz:
-   * Includes how to customize windows PE to chainload Win10 and Win11 installs.
+   * Includes how to customize Windows PE to chainload Win10 and Win11 installs.
    * Includes how to create dynamic NFS root configurations via pfSense that iPXE reads from DHCP information.
    * Includes how to create custom dynamic netboot.xyz menus for iPXE.
 * Network Analysis via Traffic Totals.
@@ -627,7 +627,7 @@ I will need you to find a few things before we start.
     * **Description:** Home CA
     * **File Contents:** Paste the contents of the file you just opened previously in your text editor.
 13. Save
-    * This will give you a place to install the certificate on guest systems without risking your login credentials to guest devices.
+    * This will give you a place to install the certificate on guest systems without risking your login credentials with guest devices.
 14. Navigate to: **Services > Squid Proxy Server > Local Cache**
 15. Save -- This step is required to setup the squid cache before starting the service.
 16. Navigate to: **Services > Squid Proxy Server > Local General**
@@ -637,7 +637,7 @@ I will need you to find a few things before we start.
     * **Extra Trusted CA:** Home CA
     * **Enable Access Logging:** Checked
 18. Navigate to: **Services > DHCP Server**
-19. Expand **Additional BOOTP/DHCP Options, click Add, 2 times.
+19. Expand **Additional BOOTP/DHCP Options**, click Add, 2 times.
 20. Enter the following data (including the quotes): -- **Reasons for using ```sed``` intensify.**
     * **Option:** 252 -- String -- "http://192.168.5.1/wpad.dat"
     * **Option:** 252 -- String -- "http://192.168.5.1/wpad.da"
@@ -728,7 +728,79 @@ I will need you to find a few things before we start.
 22. Scroll to the bottom and paste your new pre-shared key
 23. Setup a client that is in your home network currently and attempt to connect to the current pfSense **WAN** IP.
 24. Take another snapshot and label it: **VPN Options**
+
+## Setup Virtual Container Server
+* We can use the Debian virtual machine to setup containers locally and then spin up a new virtual machine to test iPXE later.
+
+### Install Required Software
+1. Navigate to the **Debian virtual machine**
+2. Take a snapshot, label it: **Before docker**sudo 
+3. Open a konsole / terminal
+4. ```curl -fsSL https://get.docker.com -o get-docker.sh```
+5. ```sudo sh ./get-docker.sh``` -- This will take a few minutes
+6. ```sudo systemctl enable docker```
+7. ```sudo systemctl start docker```
+8. ```sudo usermod -aG docker $USER```
+9. Reboot **Debian virtual machine**
+10. Login and open another terminal<br>
+![optional-1.png](images/important-1.png)
+    * This will be required to be run from your Synology NAS or any NAS that claims ownership of port 69 for tftp (even if it isn't running). You can skip this step if you are running it on a standalone system.<br>
+11. ```docker volume create portainer_data```
+12. ```docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /usr/lib/systemd/system/docker.socket:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest```<br>
+13. You will have to create a macvlan network to force the next container to have its own dedicated IP without creating a port conflict.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![important-1.png](images/important-1.png)
+    * **You can only have one instance of portainer running within your network, it will fail to connect if it detects it elsewhere, for some reason this still happens to me in virtualhome.local**
+    * Chances are you do not need it in your virtual environment anyway.<br>
+![important-2.png](images/important-2.png)
+14. Navigate to: **https://localhost:9443**
+15. accept the security risk.
+16. Create an account
+    * If it says it has timed out, run this: ```docker restart portainer```
+![optional-1.png](images/important-2.png)
+17. ```mkdir -p docker-maps/netbootxyz/{config,assets}```
+18. ```docker run -d -p 3000:3000 -p 69:69/udp -p 8080:80 --name netbootxyz --restart=always -v /home/$USER/docker-maps/assets -v /home/$USER/docker-maps/config ghcr.io/netbootxyz/netbootxyz```
+19. Navigate to: **http://192.168.5.1**
+20. Login
+21. Navigate to: **Status > DHCP Leases**
+22. Find your Debian virtual machine and click the light colored **plus** icon next to it
+23. Enter the following data:
+    * **IP Address:** 192.168.5.2**
+    * **Hostname:** Choose something you can remember so you don't have to come back here
+    * **Description:** If you do have to come back here, at least setup a description that way you know what that host does!
+24. Save
+25. Apply Changes
+26. Restart the networking connection on your Debian virtual machine to update to the new address.
+27. Navigate to: **http://localhost:3000**
+28. If this page loads, as it should. You now have netboot.xyz installed!
+29. Navigate to: **http://192.168.5.1**
+30. Login
+31. Navigate to: **Services > DHCP Server**
+32. Expand advanced options under **TFTP**
+33. Expand advanced options under **Network Booting**
+34. Enter the following data:
+    * **TFTP Server:** 192.168.5.2
+    * **Default BIOS file name:** netboot.xyz.kpxe
+    * **UEFI 32 bit file name:** netboot.xyz.efi
+    * **UEFI 64 bit file name:** netboot.xyz.efi
+35. Save
+36. Navigate to **VirtualBox**
+37. Create a new Virtual Machine
+38. Label it: **PXE Test**
+39. Expand: **Hard Disk**
+40. Click: **Do Not Add a Virtual Hard Disk**
+41. Finish
+42. Edit the settings of your new virtual machine
+43. Change type to **Other** and version to **Other/Unknown (64-bit)**
+    * This is in hopes of allowing the boot of any type of opera
+44. Click on the **System** tab and enable Network boot
+45. Click on the **Network** tab update to use the **internal network,** select the **pfsense** network
+46. Okay
+47. Start
+    * You should see the iPXE menu come up. If you do, you now have a basic netboot.xyz setup!
+
 ## ![optional-2.png](images/optional-2.png)
+
+
 
 ## Import to Production Environment
 * This section will show you how to take your config as it stands now and import it onto your hardware device.
