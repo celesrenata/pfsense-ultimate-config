@@ -1,5 +1,5 @@
 # pfsense-ultimate-config
-This project contains the documentation on how to setup your pfSense firewall to route traffic through VPN providers and provide corporate features not found in home networks
+This project contains the documentation on how to set up your pfSense firewall to route traffic through VPN providers and provide corporate features not found in home networks
 
 ## Table of Contents
 1. [Features](#features)
@@ -44,7 +44,7 @@ This project contains the documentation on how to setup your pfSense firewall to
    * Dial-in VPN Support ✓
    * DNS over SSL/TLS ✓
 * Squid Proxy for sites that do no like VPNs:
-   * Includes instructions to setup a CA for HTTPS. ✓
+   * Includes instructions to set up a CA for HTTPS. ✓
    * Includes wpad.dat / wpad.da / proxy.pac configuration via DHCP. ✓
 * Custom DHCP options:
    * PXE.
@@ -66,19 +66,19 @@ This project contains the documentation on how to setup your pfSense firewall to
 * Hardware:
     * whitebox or netgate (not the cheapest!) network appliance
         * I recommend pcengines apu2/3, personally I use an apu2c4 board.
-        * If using an old desktop, a second 1gbe nic and labeling the MAC address on the outside so you know which NIC is which later.
+        * If using an old desktop, a second 1gbe nic and labeling the MAC address on the outside, so you know which NIC is which later.
 * Software:
     * VirtualBox -- https://www.virtualbox.org/wiki/Downloads
     * Docker on a NAS or server, personally I use Synology with DSM 7.1 which already supports Docker as an add-on package.
     * pfSense -- https://www.pfsense.org/download/ -- AMD64 -- ISO
-    * A couple LiveCDs -- I use Debian during the setup as WireGuard is _not_ possible to setup in Gentoo quickly.
+    * A couple LiveCDs -- I use Debian during the setup as WireGuard is _not_ possible to set up in Gentoo quickly.
         * https://www.gentoo.org/downloads/ -- Click on "LiveGUI USB Image"
         * http://debian.osuosl.org/debian-cdimage/11.6.0-live/amd64/iso-hybrid/debian-live-11.6.0-amd64-kde.iso
 * Knowledge:
   * A general working understanding of IPV4, protocols and SSL. However, I will do my best to remove the mystery for the otherwise uninitiated.
 
 ## Before We Start
-The process is to build up a virtual environment using your new configuration we build together so you don't break your internet connection unintentionally. You can use VMware Fusion/Workstation/ESXi or Microsoft HyperV, but I'm going with an open source platform agnostic solution here.<br><br>
+The process is to build up a virtual environment using your new configuration we build together, so you don't break your internet connection unintentionally. You can use VMware Fusion/Workstation/ESXi or Microsoft HyperV, but I'm going with an open source platform-agnostic solution here.<br><br>
 I will need you to find a few things before we start.
 1. Figure out your internet provider's WAN configuration. If you don't know, it is probably DHCP. Find the WAN MAC Address of your current router and write it down!<br>
 ![Spoiler alert: If you don't write down current router's MAC address, you are going to have a bad time](images/meme-macaddress.jpeg)
@@ -112,7 +112,7 @@ I will need you to find a few things before we start.
 ![venv-virtualbox-new-pfsense-1.png](images/venv-virtualbox-new-pfsense-1.png)
 ![venv-virtualbox-new-pfsense-2.png](images/venv-virtualbox-new-pfsense-2.png)
 ![venv-virtualbox-new-pfsense-3.png](images/venv-virtualbox-new-pfsense-3.png)
-    1. Once created, right click on virtual machine and add it to a group so you do not get it confused with your other virtual machines!
+    1. Once created, right click on virtual machine and add it to a group, so you do not get it confused with your other virtual machines!
     2. Select the virtual machine we just created and click **Settings > Network > Adapter 1**.
     3. Change the attached network to **Bridged Adapter**.
     4. Select the ethernet port that your computer is currently using to connect to your network.
@@ -138,14 +138,14 @@ I will need you to find a few things before we start.
 ## Install Virtual pfSense
 1. Start the pfsense virtual machine.
     * If you have a Retina display click **View > Virtual Screen 1 > Scale to 200%**.
-2. Mash enter through the entire install.
+2. Mash enter through the entire installation.
 3. Reboot the virtual machine.
     1. It will start the iso again, select from the menu above **Machine > ACPI Shutdown**.
     2. Open settings and navigate **Storage** then the CD icon under Storage Devices, on the right side of the menu click the CD icon again and select **Remove Disk from Virtual Drive**
     3. Restart the virtual machine.
     4. You shouldn't need luck yet to see this screen, if you do, quit now:<br>
 ![venv-virtualbox-pfsense-firstboot.png](images/venv-virtualbox-pfsense-firstboot.png)
-    5. We configured the interfaces in the right order so we do not need to do anything here, however, when you build the actual device, you may have to reassign the interfaces.
+    5. We configured the interfaces in the right order, so we do not need to do anything here, however, when you build the actual device, you may have to reassign the interfaces.
     6. You may need to change the LAN network if your **WAN** also lists **192.168.1.x/24** to do that, select option **2** and follow the onscreen directions. Or if you can wait, the general setup wizard below will do it for you.
 
 ## Install Virtual Debian
@@ -156,7 +156,7 @@ I will need you to find a few things before we start.
 3. Click on **Install Debian**
 4. Follow the instructions on the screen to install, it is mostly a _mash next_ endeavor.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![Important-1.png](images/important-1.png)
-    * <span style="color:red">I suggest setting the correct timezone so you don't get SSL errors later!</span><br>
+    * <span style="color:red">I suggest setting the correct timezone, so you don't get SSL errors later!</span><br>
 ![important-2.png](images/important-2.png)
     * * If your screen locks while it installs, the password is **live**
 5. Shut the virtual machine down. VirtualBox will automagically remove the LiveCD for you after installation.
@@ -168,7 +168,7 @@ I will need you to find a few things before we start.
     4. ```exit```
 8. On the menu above the virtual machine, click **Devices > Insert Guest Additions CD Image**
 9. Open the directory of the mounted cd image
-10. Double click on **autorun.sh**
+10. Double-click on **autorun.sh**
 11. Once complete, reboot the Debian virtual machine
 12. Click on the menubar for the virtual machine and adjust the scale manually to what is typically comfortable. At this point it will wake up and give you the full resolution.
 13. Depending on your VPN providers, installation instructions may vary. Below are the steps outlined to get ExpressVPN and NordVPN settings for pfSense.
@@ -195,7 +195,7 @@ I will need you to find a few things before we start.
     17. Save this information from all 3 commands as you will need it later! I saved mine with my favorite text editor which wasn't installed:
         * ```sudo apt-get install vim```
     18. ```nordvpn disconnect```
-14. You will want to setup shared folders to export your new configuration for when you migrate to your production environment or to make life easier with other tasks
+14. You will want to set up shared folders to export your new configuration for when you migrate to your production environment or to make life easier with other tasks
     1. In virtualbox, navigate to: **Debian LiveCD > Settings > Shared Folders**
     2. Map a folder to /mnt/shared
 
@@ -203,7 +203,7 @@ I will need you to find a few things before we start.
 1. Open an installed browser **Firefox/Chromium/Konqueror** and Navigate to:192.168.1.1 (unless you had to change it above, however, I will be referring to it as 192.168.1.1 for the rest of this section).
 2. Login to pfSense using the default login credentials: **admin / pfsense**
 3. Follow the general setup instructions and make changes on steps I highlight below:
-    1. **Step 2**: Setup the hostname and search domain of your firewall, for this I use **pfSense** and **virtualhome.local**:<br>
+    1. **Step 2**: Set up the hostname and search domain of your firewall, for this I use **pfSense** and **virtualhome.local**:<br>
 ![venv-virtualbox-pfsense-setup-wizard-1.png](images/venv-virtualbox-pfsense-setup-wizard-1.png)
     2. **Step 3**: NTP settings are safe to leave alone unless you have your own:
 ![venv-virtualbox-pfsense-setup-wizard-2.png](images/venv-virtualbox-pfsense-setup-wizard-2.png)
@@ -292,7 +292,7 @@ I will need you to find a few things before we start.
     -----END CERTIFICATE-----
     ```
 7. <span style="color:green">Save</span><br>
-![optional-2.png](images%2Foptional-2.png)
+![optional-2.png](images/optional-2.png)
 8. Navigate to:**System > Certificate Manager > Certificates > Add/Sign**
 9. Enter the following data:
     * **Method:** Create an internal Certificate
@@ -319,7 +319,7 @@ I will need you to find a few things before we start.
     * Save
 
 ## OpenVPN Tunnels
-* This is where you and I might diverge a little. For OpenVPN I use ExpressVPN. NordVPN's support for OpenVPN drops a _lot_ of packets. I will cover setting up WireGuard with NordVPN in the next section.
+* This is where you and I might diverge a little. For OpenVPN, I use ExpressVPN. NordVPN's support for OpenVPN drops a _lot_ of packets. I will cover setting up WireGuard with NordVPN in the next section.
 * In addition, I will be pulling details from my production environment so if you see CA/Certs or subnets that conflict with what I previously told you, I will address them under the screenshots in a bullet point.
 1. Navigate to:**VPN > OpenVPN > Clients > Add**
 2. Enter the following data:
@@ -441,7 +441,7 @@ I will need you to find a few things before we start.
 7. Save
 8. Navigate to:**VPN > WireGuard Status**
     * You should see something like this:<br>
-    ![venv-virtualbox-pfsense-wireguard-city1.png](images%2Fvenv-virtualbox-pfsense-wireguard-city1.png)
+    ![venv-virtualbox-pfsense-wireguard-city1.png](images/venv-virtualbox-pfsense-wireguard-city1.png)
 9. Take another snapshot of the pfSense virtual machine and label it: **VPN Config**
 
 ## Redirecting all WAN bound traffic through VPNs
@@ -576,14 +576,14 @@ I will need you to find a few things before we start.
 
 ### Section Conclusion
 * If your goal is to just have secure internet, you can stop here and skip forward to this section. However, if you want all the other bells and whistles used in IT Support, carry on!
-* Even though when we setup openvpn we selected no hardware acceleration, that is a falsehood, it will use AES-NI as we specified in the config before we fisnished.
+* Even though when we set up openvpn we selected no hardware acceleration, that is a falsehood, it will use AES-NI as we specified in the config before we fisnished.
 
 ## Setup Bypass Proxy
 ![optional-1.png](images/optional-1.png)
 * Are you tired of seeing this?<br>
 ![captcha.png](images/captcha.png)
 * Below in this optional step I will poke a hole in your VPN setup to make life less frustrating.
-1. On your Debian virtual machine you will want to login to the pfSense portal
+1. On your Debian virtual machine you will want to log in to the pfSense portal
 2. Navigate to: **Diagnostics > Filer**
 3. Add
 4. Enter the following data:
@@ -629,7 +629,7 @@ I will need you to find a few things before we start.
 13. Save
     * This will give you a place to install the certificate on guest systems without risking your login credentials with guest devices.
 14. Navigate to: **Services > Squid Proxy Server > Local Cache**
-15. Save -- This step is required to setup the squid cache before starting the service.
+15. Save -- This step is required to set up the squid cache before starting the service.
 16. Navigate to: **Services > Squid Proxy Server > Local General**
 17. Enter the following data:
     * **Enable Squid Proxy:** Checked
@@ -674,8 +674,8 @@ I will need you to find a few things before we start.
 4. Find your device and click the light colored **plus** icon next to it
 5. Enter the following data:
     * **IP Address:** An IP outside of your dynamic range set in **Services > DHCP Server**
-    * **Hostname:** Choose something you can remember so you don't have to come back here
-    * **Description:** If you do have to come back here, at least setup a description so you know what that host does!
+    * **Hostname:** Choose something you can remember, so you don't have to come back here
+    * **Description:** If you do have to come back here, at least set up a description, so you know what that host does!
 6. Save
 7. Apply Changes
 8. Navigate to: **Firewall > Rules > LAN**
@@ -687,7 +687,7 @@ I will need you to find a few things before we start.
 13. Reset the networking on your target device
 
 ## Dial-in VPN Support
-* I will setup an IPSEC tunnel for mobile login, however you can just as easily do it with **OpenVPN** as there is an export package available called **openvpn-client-export** to allow devices using OpenVPN to dial in without the fuss.
+* I will set up an IPSEC tunnel for mobile login, however you can just as easily do it with **OpenVPN** as there is an export package available called **openvpn-client-export** to allow devices using OpenVPN to dial in without the fuss.
 1. From the Debian virtual machine
 2. Navigate to: **http://182.168.5.1** and login
 3. Navigate to: **System > Users**
@@ -726,11 +726,11 @@ I will need you to find a few things before we start.
 20. Navigate to: **System > User Manager**
 21. Edit the User you created
 22. Scroll to the bottom and paste your new pre-shared key
-23. Setup a client that is in your home network currently and attempt to connect to the current pfSense **WAN** IP.
+23. Set up a client that is in your home network currently and attempt to connect to the current pfSense **WAN** IP.
 24. Take another snapshot and label it: **VPN Options**
 
 ## Setup Virtual Container Server
-* We can use the Debian virtual machine to setup containers locally and then spin up a new virtual machine to test iPXE later.
+* We can use the Debian virtual machine to set up containers locally and then spin up a new virtual machine to test iPXE later.
 
 ### Install Required Software
 1. Navigate to the **Debian virtual machine**
@@ -765,8 +765,8 @@ I will need you to find a few things before we start.
 22. Find your Debian virtual machine and click the light colored **plus** icon next to it
 23. Enter the following data:
     * **IP Address:** 192.168.5.2**
-    * **Hostname:** Choose something you can remember so you don't have to come back here
-    * **Description:** If you do have to come back here, at least setup a description that way you know what that host does!
+    * **Hostname:** Choose something you can remember, so you don't have to come back here
+    * **Description:** If you do have to come back here, at least set up a description that way you know what that host does!
 24. Save
 25. Apply Changes
 26. Restart the networking connection on your Debian virtual machine to update to the new address.
