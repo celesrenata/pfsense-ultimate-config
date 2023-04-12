@@ -40,7 +40,14 @@ This project contains the documentation on how to set up your pfSense firewall t
     4. [Create Structure on NAS or Samba Server](#create-structure-on-nas-or-samba-server)
     5. [Create Custom netboot.xyz Menu for Windows](#create-custom-netbootxyz-menu-for-windows)
     6. [Test Windows Install Over PXE](#test-windows-install-over-pxe)
-20. [Import to Production Environment](#import-to-production-environment)
+20. [Set up Custom netboot.xyz Menus](#set-up-custom-netbootxyz-menus)
+    1. [Create DHCP Options](#create-dhcp-options)
+    2. [Create Custom Menu](#create-custom-menu)
+21. [Setup Diskless Debian](#setup-diskless-debian)
+    1. [Install Required Software](#install-required-software-2)
+    2. [Build Image](#build-image)
+    3. [Test Debian Over PXE](#test-debian-over-pxe)
+22. [Import to Production Environment](#import-to-production-environment)
 
 ## Features
 * Secure VPN:
@@ -58,16 +65,15 @@ This project contains the documentation on how to set up your pfSense firewall t
    * Includes wpad.dat / wpad.da / proxy.pac configuration via DHCP. ✓
 * Custom DHCP options:
    * PXE. ✓
-   * Custom iPXE Menus.
-   * Custom NFSroot options for NFSv3/v4.1.
+   * Custom iPXE Menus. ✓
+   * Custom NFSroot options for NFSv3/v4.1. ✓
    * Automatic proxy configuration. ✓
-* Whitebox instructions for pcengines.ch devices:
-   * Firmware Updates.
-   * Performance Improvements.
 * Containerized PXE boot with netboot.xyz:
    * Includes how to customize Windows PE to chainload Win10 and Win11 installs. ✓
-   * Includes how to create dynamic NFS root configurations via pfSense that iPXE reads from DHCP information.
-   * Includes how to create custom dynamic netboot.xyz menus for iPXE.
+   * Includes how to create dynamic NFS root configurations via pfSense that iPXE reads from DHCP information. ✓
+   * Includes how to create custom dynamic netboot.xyz menus for iPXE. ✓
+* Diskless Debian:
+  * Uses NFS from your fileserver and will run on anything that supports PXE. ✓
 * Network Analysis via Traffic Totals.
 * TODO:
    * Containerized Network Analysis Reports.
@@ -1054,11 +1060,94 @@ I will need you to find a few things before we start.
 6. Save Config
 
 ### Test Windows Install Over PXE
+* [![Demo](images/venv-virtualbox-win11-test.png)](https://youtu.be/_kj6XMkCPdw)
 1. First, VirtualBox and iPXE are not great with UEFI, we can step around this problem by tricking the virtual machine into booting iPXE via an iso and setting the adapter type to "virtuio-net" under Advanced
-    * ** However, I cannot get WinPE to find the network card, adding a second card causes iPXE to hang. You will have to use a different virtualization solution or an actual machine!**
+    * ** However, I cannot get WinPE to find the network card, even with drivers. Adding a second card causes iPXE to hang. You will have to use a different virtualization solution or an actual machine!**
 2. Download: https://boot.ipxe.org/ipxe.iso
 3. Mount it to your created virtual machine for Windows 11.
 
+## Set up Custom netboot.xyz Menus
+### Create DHCP Options
+* I have already covered how to modify your **Windows** installations to work over PXE. I will now show you how to create custom NFS entries.
+1. Navigate to: **http://192.168.5.1**
+2. Navigate to: **Services > DHCP Server**
+3. We are now going to use unused option numbers to create dynamic NFSroot tags that can be imported from netboot.xyz
+4. Under **Additional BOOTP/DHCP Options** click **Add** twice.
+5. Enter the following data:
+    **Option:** 153 -- String -- "nfs:192.168.42.8:/volume2/diskless/debian,vers=3,rw,bg,hard,rsize=32768,wsize=32768,tcp,timeo=600"
+        * If you know better values, let me know!
+    **Option:** 154 -- String -- "nfs4:192.168.42.8:/volume2/diskless/debian,vers=4.1,rw,bg,async,fsc,hard,rsize=32768,wsize=32768,timeo=600"
+        * If you know better values, let me know!
+6. Save
+
+### Create Custom Menu
+* netboot.xyz supports pulling custom menus directly from github, so that's what we're going to do here!
+1. Navigate to: **http://192.168.5.2:3000**
+2. Navigate to: **Menus > boot.cfg**
+3. Add the following lines:
+    ```
+   # Set the github account
+    set github_user you
+   ```
+4. Save Config
+5. Navigate to: https://github.com/netbootxyz/netboot.xyz-custom
+6. Fork it!
+7. Edit: custom.ipxe and replace the file with:
+    ```
+   #!ipxe
+    
+    :custom
+    clear custom_choice
+    menu This will load a custom diskless Debian image directly through NFS
+    item --gap Diskless Images
+    item option_one ${space} Debian 11 - NFSv3
+    item option_two ${space} Debian 11 - NFSv4.1
+    
+    choose custom_choice || goto custom_exit
+    echo ${cls}
+    goto ${custom_choice}
+    goto custom_exit
+    
+    # allow for external keymap setting
+    isset ${keymap} || set keymap dokeymap
+    # allow for external cmdline options
+    isset ${cmdline} || set cmdline vga=791
+    
+    :option_one
+    
+    initrd http://192.168.42.9:80/debian/initramfs-nfs
+    kernel http://192.168.42.9:80/debian/vmlinuz initrd=initramfs-nfs
+    imgargs vmlinuz root=${153:string} ip=auto init=/lib/systemd/systemd
+    imgstat
+    boot || goto custom_exit
+    
+    :option_two
+    
+    initrd http://192.168.42.9:80/debian/initramfs-nfs
+    kernel http://192.168.42.9:80/debian/vmlinuz initrd=initramfs-nfs
+    imgargs vmlinuz root=${154:string} ip=auto init=/lib/systemd/systemd
+    imgstat
+    boot || goto custom_exit
+    
+    :custom_exit
+    chain utils.ipxe
+    exit
+   ```
+   
+## Setup Diskless Debian
+* In this section I will provide you with a script that will automatically build out and export your machine once you install the necessary dependencies.
+### Install Required Software
+1. ```apt install dracut dracut-core dracut-network dracut-generic-config dracut-squash ostree-boot build-essential linux-source bc kmod cpio flex libncurses5-dev libelf-dev libssl-dev dwarves bison```
+2. Download my script from github!
+    * ```wget https://github.com/celesrenata/netboot.xyz-custom/blob/master/build-pxe-debian.sh```
+3. ```chmod +rwx build-pxe-debian.sh```
+4. edit the file to point to your nfs shares and servers
+5. ```sudo tar xavf /usr/src/linux-source-*```
+### Build Image
+1. ```sudo ./build-pxe-debian.sh kernel```
+    * Make coffee, it is going to take a while.
+### Test Debian Over PXE
+1. Spin up your PXE test image in whatever virtual machine environment other than virtualbox that you would like and try to access your custom menu with the new boot options!
 
 ## ![optional-2.png](images/optional-2.png)
 
