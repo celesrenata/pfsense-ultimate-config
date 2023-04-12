@@ -74,7 +74,7 @@ This project contains the documentation on how to set up your pfSense firewall t
 
 ## Requirements
 * Hardware:
-    * whitebox or netgate (not the cheapest!) network appliance
+    * Whitebox or Netgate (do not buy the cheapest one!) network appliances
         * I recommend pcengines apu2/3, personally I use an apu2c4 board.
         * If using an old desktop, a second 1gbe nic and labeling the MAC address on the outside, so you know which NIC is which later.
 * Software:
