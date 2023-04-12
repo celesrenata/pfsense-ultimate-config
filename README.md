@@ -36,6 +36,10 @@ This project contains the documentation on how to set up your pfSense firewall t
 19. [Create WinPE Image](#create-winpe-image)
     1. [Install Required Software](#install-required-software-1)
     2. [Create WinPE Media](#create-winpe-media)
+    3. [Create Structure in netboot.xyz](#create-structure-in-netbootxyz)
+    4. [Create Structure on NAS or Samba Server](#create-structure-on-nas-or-samba-server)
+    5. [Create Custom netboot.xyz Menu for Windows](#create-custom-netbootxyz-menu-for-windows)
+    6. [Test Windows Install Over PXE](#test-windows-install-over-pxe)
 20. [Import to Production Environment](#import-to-production-environment)
 
 ## Features
@@ -61,13 +65,12 @@ This project contains the documentation on how to set up your pfSense firewall t
    * Firmware Updates.
    * Performance Improvements.
 * Containerized PXE boot with netboot.xyz:
-   * Includes how to customize Windows PE to chainload Win10 and Win11 installs.
+   * Includes how to customize Windows PE to chainload Win10 and Win11 installs. ✓
    * Includes how to create dynamic NFS root configurations via pfSense that iPXE reads from DHCP information.
    * Includes how to create custom dynamic netboot.xyz menus for iPXE.
 * Network Analysis via Traffic Totals.
 * TODO:
    * Containerized Network Analysis Reports.
-   * Add drivers to WinPE for additional network card support. ✓
 
 ## Requirements
 * Hardware:
@@ -847,15 +850,25 @@ I will need you to find a few things before we start.
 22. run ```mkdir %USERPROFILE%\WinPE-drivers```
 23. Download all the networking drivers you use within your network or ones you feel you will encounter to the directory made above.
     * Here is a list of commonly used drivers in case you need to install them into your build:
-      * https://docs.google.com/document/d/1RSVbF5C3ykSGOKnD_vLh3xX6-LxqY8VXp9XZd7MMQrs/edit
-      * I wanted Thunderbolt drivers, so I used: https://www.dell.com/support/kbdoc/en-us/000108642/winpe-10-driver-pack
+        * https://docs.google.com/document/d/1RSVbF5C3ykSGOKnD_vLh3xX6-LxqY8VXp9XZd7MMQrs/edit
+        * I wanted Thunderbolt drivers, so I used: https://www.dell.com/support/kbdoc/en-us/000108642/winpe-10-driver-pack
+        * Additionally, I needed drivers for the modified network drivers needed to make pxe boot work in VirtualBox:
+            * https://github.com/virtio-win/virtio-win-pkg-scripts/blob/master/README.md
+            * https://gareth.com/index.php/2020/07/17/slipstreaming-proxmox-virtio-drivers-into-windows-10/
+            * You will need to unpack the stable iso and copy the ```C:\Users\You\Downloads\virtio-win-0.1.229\NetKVM\w10\``` and ```C:\Users\You\Downloads\virtio-win-0.1.229\NetKVM\w11\``` to the WinPE-drivers folder.
     * In some cases they will not have the inf file handy. If they are an **.msi** extension, you can rename it to a **.zip** and extract the files with 7zip and rename them!
     * If you use the Dell driver pack, expand it with 7zip into the driver directory
 24. We need to install all the drivers we downloaded:
-    * ```dism /Image:mount /Add-Driver /Driver:..\WinPE-drivers /recurse``` -- This could take a bit.
+    * ```dism /Image:mount /Add-Driver /Driver:..\WinPE-drivers /recurse /ForceUnsigned``` -- This could take a bit.
 25. Unmount the wim:
     * ```dism /Unmount-Wim /MountDir:mount /Commit```
-26. Create a file named: **configure.bat** with the following contents, update the script for your network.
+26. Create some new folders:
+    * run ```mkdir %USERPROFILE%\WinPE\configs```
+    * run ```mkdir %USERPROFILE%\WinPE\configs\WinPE```
+    * run ```mkdir %USERPROFILE%\WinPE\configs\Win10_22H2_English_x64 Win10_22H2_English_x64```
+    * run ```mkdir %USERPROFILE%\WinPE\configs\Win11_22H2_English_x64 Win10_22H2_English_x64```
+27. Create a file named in the WinPE\configs folder we just created under your user profile directory: 
+    * **configure.bat** with the following contents, update the script for your network.
     * Hand holding is over! You got this!
         ```
         @echo off
@@ -867,28 +880,188 @@ I will need you to find a few things before we start.
         @ping -n 5 192.168.42.8 > nul
         net use m: \\192.168.42.8\pxe\assets /user:pxe somepassword
         if errorlevel 1 GOTO CLEAR
-        %SYTEMDRIVE%\install.bat
+        install.bat
         exit
         :CLEAR
         net use * /delete /yes
         GOTO SHARE
         ```
-27. Create a file named: **winpeshl.ini**:
+28. Create a file named: **winpeshl.ini** in the same directory:
     ```
     [LaunchApp]
     AppPath - %SYSTEMDRIVE%\configure.bat
     ```
+29. Create a file named: **install.bat** in the new **Win10**_22H2_English_x64 Win10_22H2_English_x64 folder:
+    ```
+    m:\Win10_22H2_English_x64\setup.exe
+    ```
+    * Make sure this points to your network share with installation media!
 
-28. Create a file named: **install.bat**:
+30. Create a file named: **install.bat** in the new **Win11**_22H2_English_x64 Win10_22H2_English_x64 folder:
     ```
     m:\Win11_22H2_English_x64\setup.exe
     ```
     * Make sure this points to your network share with installation media!
-29. Let's mount index:1 again:
-    * ```dism /Mount-Wim /MountDir:mount /wimfile:..\win11-source\sources\boot.wim /index:1```
-30. Put **winpeshl.ini**, **configure.bat** and **install.bat** into the mounted wim folder under
-31. run ```dism /Unmount-Wim /MountDir:mount /Commit```
+31. Create a file named: **install.bat** in the new **WinPE** folder:
+    ```
+    @echo off
+    start cmd /C pause
+    ```
+    * Make sure this points to your network share with installation media!
+
+### Create Structure in netboot.xyz
+* We need to copy files into the container we created earlier on your Debian virtual machine in ```/home/$USER/docker-maps/assets```
+1. You have a mapped shared folder to that virtual machine from your primary computer, copy the ```configs``` folder there.
+2. Copy the ```WinPE\media``` folder to your mapped assets folder as ```x64```
+3. Navigate to your **Debian virtual machine.**
+4. Create the WinPE folder: ```mkdir /home/$USER/docker-maps/assets/WinPE```
+5. Copy the files you moved to your shared folder.
+
+### Create Structure on NAS or Samba Server
+* We must create a location for the boot.wim file to find the files it needs after it boots, if you do not currently have a samba share on your network you will need to create one.
+* Since this process varies per home network setup, I am not going to cover how to do this. You can find many guides online on how to do this:
+    * https://computingforgeeks.com/how-to-configure-samba-share-on-debian/
+    * https://support.microsoft.com/en-us/windows/file-sharing-over-a-network-in-windows-b58704b2-f53a-4b82-7bc1-80f9994725bf
+    * The script I had you edit yourself above uses a user named pxe, and a password I leave up to you as it will be saved in the clear.  
+1. Copy the required files to your samba share:
+    * We are expecting the sources for Windows 10 and Windows 11 that you can extract from 7zip as we did with Windows 11 earlier. I will let you do that without my help:
+        * Put them in the following locations on your NAS / Server, this is mine:
+            1. \\ServerName\pxe\assets\Win10_22H2_English_x64
+            2. \\ServerName\pxe\assets\Win11_22H2_English_x64
+
+### Create Custom netboot.xyz Menu for Windows
+1. Navigate to: **http://localhost:3000** from your Debian virtual machine
+2. Navigate to: **Menus > boot.cfg**
+3. We need to add the media location for Licensed Software
+   1. Search for: ```set win_base_url```
+   2. Change it to: ```set win_base_url http://192.168.5.2:80/WinPE```
+   3. Save Config
+4. Navigate to: **windows.ipxe**
+5. Replace the entire file with the following:
+   ```
+    #!ipxe
+    
+    # Microsoft Windows
+    # https://www.microsoft.com
+    
+    set winpe_arch x64
+    set win_image Win10_22H2_English_x64
+    goto ${menu} ||
+    
+    :windows
+    set os Microsoft Windows
+    clear win_version
+    menu ${os} 
+    item --gap Installers
+    item win_install ${space} Load ${os} Installer...
+    item --gap Options:
+    item image_set ${space} Image [ ${win_image} ]
+    item pe_arch_set ${space} Architecture [ ${winpe_arch} ]
+    item url_set ${space} Base URL [ ${win_base_url} ]
+    choose win_version || goto windows_exit
+    goto ${win_version}
+    
+    :image_set
+    menu Image
+    item Win10_22H2_English_x64 Win10_22H2_English_x64
+    item Win11_22H2_English_x64 Win11_22H2_English_x64
+    item WinPE WinPE
+    choose win_image && goto windows
+    
+    :pe_arch_set
+    iseq ${winpe_arch} x64 && set winpe_arch x86 || set winpe_arch x64
+    goto windows
+    
+    :url_set
+    echo Set the HTTP URL of an extracted Windows ISO without the trailing slash:
+    echo e.g. http://www.mydomain.com/windows
+    echo
+    echo -n URL: ${} && read win_base_url
+    echo
+    echo netboot.xyz will attempt to load the following files:
+    echo ${win_base_url}/${winpe_arch}/bootmgr
+    echo ${win_base_url}/${winpe_arch}/bootmgr.efi
+    echo ${win_base_url}/${winpe_arch}/boot/bcd
+    echo ${win_base_url}/${winpe_arch}/boot/boot.sdi
+    echo ${win_base_url}/${winpe_arch}/sources/boot.wim
+    echo ${win_base_url}/configs/${win_image}/install.bat
+    echo ${win_base_url}/configs/configure.bat
+    echo ${win_base_url}/configs/winpeshl.ini
+    echo
+    prompt Press any key to return to Windows Menu...
+    goto windows
+    
+    :win_install
+    isset ${win_base_url} && goto boot || echo URL not set... && goto url_set
+    
+    :boot
+    iseq ${win_image} WinPE && goto bootPE ||
+    iseq ${win_image} Win10_22H2_English_x64 && goto boot10 ||
+    iseq ${win_image} Win11_22H2_English_x64 && goto boot11 ||
+    
+    :boot10
+    imgfree
+    kernel http://${boot_domain}/wimboot
+    initrd ${win_base_url}/configs/${win_image}/install.bat install.bat
+    initrd ${win_base_url}/configs/configure.bat configure.bat
+    initrd ${win_base_url}/configs/winpeshl.ini winpeshl.ini
+    initrd -n bootmgr     ${win_base_url}/${winpe_arch}/bootmgr       bootmgr ||
+    initrd -n bootmgr.efi ${win_base_url}/${winpe_arch}/bootmgr.efi   bootmgr.efi ||      
+    initrd -n bcd         ${win_base_url}/${winpe_arch}/boot/bcd      bcd ||
+    initrd -n bcd         ${win_base_url}/${winpe_arch}/Boot/BCD      bcd ||
+    initrd -n boot.sdi    ${win_base_url}/${winpe_arch}/boot/boot.sdi boot.sdi ||
+    initrd -n boot.sdi    ${win_base_url}/${winpe_arch}/Boot/boot.sdi boot.sdi ||
+    initrd -n boot.wim    ${win_base_url}/${winpe_arch}/sources/boot.wim boot.wim
+    boot
+    
+    :windows_exit
+    exit 0
+    
+    :boot11
+    imgfree
+    kernel http://${boot_domain}/wimboot
+    initrd ${win_base_url}/configs/${win_image}/install.bat install.bat
+    initrd ${win_base_url}/configs/${win_image}/bypassreqs.reg bypassreqs.reg
+    initrd ${win_base_url}/configs/configure.bat configure.bat
+    initrd ${win_base_url}/configs/winpeshl.ini winpeshl.ini
+    initrd -n bootmgr     ${win_base_url}/${winpe_arch}/bootmgr       bootmgr ||
+    initrd -n bootmgr.efi ${win_base_url}/${winpe_arch}/bootmgr.efi   bootmgr.efi ||      
+    initrd -n bcd         ${win_base_url}/${winpe_arch}/boot/bcd      bcd ||
+    initrd -n bcd         ${win_base_url}/${winpe_arch}/Boot/BCD      bcd ||
+    initrd -n boot.sdi    ${win_base_url}/${winpe_arch}/boot/boot.sdi boot.sdi ||
+    initrd -n boot.sdi    ${win_base_url}/${winpe_arch}/Boot/boot.sdi boot.sdi ||
+    initrd -n boot.wim    ${win_base_url}/${winpe_arch}/sources/boot.wim boot.wim
+    boot
+    
+    :windows_exit
+    exit 0
+    
+    :bootPE
+    imgfree
+    kernel http://${boot_domain}/wimboot
+    initrd -n bootmgr     ${win_base_url}/${winpe_arch}/bootmgr       bootmgr ||
+    initrd -n bootmgr.efi ${win_base_url}/${winpe_arch}/bootmgr.efi   bootmgr.efi ||      
+    initrd -n bcd         ${win_base_url}/${winpe_arch}/boot/bcd      bcd ||
+    initrd -n bcd         ${win_base_url}/${winpe_arch}/Boot/BCD      bcd ||
+    initrd -n boot.sdi    ${win_base_url}/${winpe_arch}/boot/boot.sdi boot.sdi ||
+    initrd -n boot.sdi    ${win_base_url}/${winpe_arch}/Boot/boot.sdi boot.sdi ||
+    initrd -n boot.wim    ${win_base_url}/${winpe_arch}/sources/boot.wim boot.wim
+    boot
+    
+    :windows_exit
+    exit 0
+    ```
+6. Save Config
+
+### Test Windows Install Over PXE
+1. First, VirtualBox and iPXE are not great with UEFI, we can step around this problem by tricking the virtual machine into booting iPXE via an iso and setting the adapter type to "virtuio-net" under Advanced
+    * ** However, I cannot get WinPE to find the network card, adding a second card causes iPXE to hang. You will have to use a different virtualization solution or an actual machine!**
+2. Download: https://boot.ipxe.org/ipxe.iso
+3. Mount it to your created virtual machine for Windows 11.
+
+
 ## ![optional-2.png](images/optional-2.png)
+
 
 ## Import to Production Environment
 * This section will show you how to take your config as it stands now and import it onto your hardware device.
