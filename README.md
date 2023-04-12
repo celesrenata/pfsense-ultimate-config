@@ -33,7 +33,10 @@ This project contains the documentation on how to set up your pfSense firewall t
 18. [Setup Virtual Container Server](#setup-virtual-container-server)
     1. [Install Required Software](#install-required-software)
     2. [Initial iPXE Setup](#initial-ipxe-setup)
-18. [Import to Production Environment](#import-to-production-environment)
+19. [Create WinPE Image](#create-winpe-image)
+    1. [Install Required Software](#install-required-software-1)
+    2. [Create WinPE Media](#create-winpe-media)
+20. [Import to Production Environment](#import-to-production-environment)
 
 ## Features
 * Secure VPN:
@@ -64,7 +67,7 @@ This project contains the documentation on how to set up your pfSense firewall t
 * Network Analysis via Traffic Totals.
 * TODO:
    * Containerized Network Analysis Reports.
-   * Add drivers to WinPE for additional network card support.
+   * Add drivers to WinPE for additional network card support. ✓
 
 ## Requirements
 * Hardware:
@@ -605,11 +608,13 @@ I will need you to find a few things before we start.
         return "DIRECT"; 
     else if (shExpMatch(host, "*.google.com")) 
         return "PROXY 192.168.5.1:3128" ;
+    else if (shExpMatch(host, "*.gstatic.com")) 
+        return "PROXY 192.168.5.1:3128" ;
     else if (shExpMatch(host, "*.tidal.com")) 
         return "PROXY 192.168.5.1:3128" ;
     else if (shExpMatch(host, "*.amazon.com")) 
         return "PROXY 192.168.5.1:3128" ;
-    else if (shExpMatch(host, "*.gstatic.com")) 
+    else if (shExpMatch(host, "*.microsoft.com")) 
         return "PROXY 192.168.5.1:3128" ;
     else 
         return "DIRECT";
@@ -802,9 +807,88 @@ I will need you to find a few things before we start.
 28. Okay
 29. Start
     * You should see the iPXE menu come up. If you do, you now have a basic netboot.xyz setup!
+
+## Create WinPE Image
+### Install Required Software
+* I am assuming you already have 7zip installed!
+1. Familiarize yourself with the steps in the following instructions:
+    * https://learn.microsoft.com/en-us/windows-hardware/get-started/adk-install
+    * https://4sysops.com/archives/create-a-winpe-bootable-disk-with-windows-11/
+    * https://www.tomshardware.com/how-to/bypass-windows-11-tpm-requirement
+2. Download the files listed in the microsoft link:
+    * https://learn.microsoft.com/en-us/windows-hardware/get-started/adk-install
+    * You only need the deployment tools, but default settings are fine. Install them to the default location.
+3. Download the Windows 11 creation media:
+    * https://www.microsoft.com/software-download/windows11
+4. Create an ISO.
+
+### Create WinPE Media
+1. Use 7zip to expand the iso to %USERPROFILE%\win11-source
+2. Open an elevated command prompt
+3. run ```cd c:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools"```
+4. run ```DandISetEnv.bat```
+5. run ```copype amd64 %USERPROFILE%\WinPE```
+6. run ```MakeWinPEMedia.cmd /ISO %USERPROFILE\WinPE %USERPROFILE%\Downloads\WinPE.iso```
+7. run ```cd %USERPROFILE\WinPE```
+8. run ```dism /Mount-Wim /MountDir:mount /wimfile:..\win11-source\sources\boot.wim /index:1```
+9. run ```dism /Image:mount /Add-Package /PackagePath:"%WinPERoot%\amd64\WinPE_OCs\WinPE-WMI.cab"```
+10. run ```dism /Image:mount /Add-Package /PackagePath:"%WinPERoot%\amd64\WinPE_OCs\WinPE-NetFx.cab"```
+11. run ```dism /Image:mount /Add-Package /PackagePath:"%WinPERoot%\amd64\WinPE_OCs\WinPE-PowerShell.cab"```
+12. run ```reg load HKLM\test mount\Windows\System32\config\SYSTEM```
+13. run ```regedit```
+14. Navigate to: **Computer\HKEY_LOCAL_MACHINE\test\Setup\**
+15. Create a new key named: **LabConfig**
+16. Expand: **LabConfig**
+17. Create new **DWORD (32-bit) Value** named BypassTPMCheck
+18. Create new **DWORD (32-bit) Value** named BypassRAMCheck
+19. Create new **DWORD (32-bit) Value** named BypassSecureBoot
+20. Close regedit
+21. run ```reg unload HKLM\test```
+22. run ```mkdir %USERPROFILE%\WinPE-drivers```
+23. Download all the networking drivers you use within your network or ones you feel you will encounter to the directory made above.
+    * Here is a list of commonly used drivers in case you need to install them into your build:
+      * https://docs.google.com/document/d/1RSVbF5C3ykSGOKnD_vLh3xX6-LxqY8VXp9XZd7MMQrs/edit
+      * I wanted Thunderbolt drivers, so I used: https://www.dell.com/support/kbdoc/en-us/000108642/winpe-10-driver-pack
+    * In some cases they will not have the inf file handy. If they are an **.msi** extension, you can rename it to a **.zip** and extract the files with 7zip and rename them!
+    * If you use the Dell driver pack, expand it with 7zip into the driver directory
+24. We need to install all the drivers we downloaded:
+    * ```dism /Image:mount /Add-Driver /Driver:..\WinPE-drivers /recurse``` -- This could take a bit.
+25. Unmount the wim:
+    * ```dism /Unmount-Wim /MountDir:mount /Commit```
+26. Create a file named: **configure.bat** with the following contents, update the script for your network.
+    * Hand holding is over! You got this!
+        ```
+        @echo off
+        Wpeutil InitializeNetwork
+        :START
+        ping -n 1 192.168.42.8
+        if errorlevel 1 GOTO START
+        :SHARE
+        @ping -n 5 192.168.42.8 > nul
+        net use m: \\192.168.42.8\pxe\assets /user:pxe somepassword
+        if errorlevel 1 GOTO CLEAR
+        %SYTEMDRIVE%\install.bat
+        exit
+        :CLEAR
+        net use * /delete /yes
+        GOTO SHARE
+        ```
+27. Create a file named: **winpeshl.ini**:
+    ```
+    [LaunchApp]
+    AppPath - %SYSTEMDRIVE%\configure.bat
+    ```
+
+28. Create a file named: **install.bat**:
+    ```
+    m:\Win11_22H2_English_x64\setup.exe
+    ```
+    * Make sure this points to your network share with installation media!
+29. Let's mount index:1 again:
+    * ```dism /Mount-Wim /MountDir:mount /wimfile:..\win11-source\sources\boot.wim /index:1```
+30. Put **winpeshl.ini**, **configure.bat** and **install.bat** into the mounted wim folder under
+31. run ```dism /Unmount-Wim /MountDir:mount /Commit```
 ## ![optional-2.png](images/optional-2.png)
-
-
 
 ## Import to Production Environment
 * This section will show you how to take your config as it stands now and import it onto your hardware device.
