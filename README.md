@@ -47,6 +47,7 @@ This project contains the documentation on how to set up your pfSense firewall t
     1. [Install Required Software](#install-required-software-2)
     2. [Build Image](#build-image)
     3. [Test Debian Over PXE](#test-debian-over-pxe)
+    4. [Bonus Round](#bonus-round)
 22. [Import to Production Environment](#import-to-production-environment)
 
 ## Features
@@ -1060,7 +1061,7 @@ I will need you to find a few things before we start.
 6. Save Config
 
 ### Test Windows Install Over PXE
-* [![Demo](images/venv-virtualbox-win11-test.png)](https://youtu.be/_kj6XMkCPdw)
+* [![Windows Install Demo](images/venv-vmware-win11-test.png)](https://youtu.be/_kj6XMkCPdw)
 1. First, VirtualBox and iPXE are not great with UEFI, we can step around this problem by tricking the virtual machine into booting iPXE via an iso and setting the adapter type to "virtuio-net" under Advanced
     * ** However, I cannot get WinPE to find the network card, even with drivers. Adding a second card causes iPXE to hang. You will have to use a different virtualization solution or an actual machine!**
 2. Download: https://boot.ipxe.org/ipxe.iso
@@ -1147,10 +1148,13 @@ I will need you to find a few things before we start.
 1. ```sudo ./build-pxe-debian.sh kernel```
     * Make coffee, it is going to take a while.
 ### Test Debian Over PXE
+* [![Debian Demo](images/venv-vmware-nfs-debian.png)](https://youtu.be/FN8uHPBWgQc)
 1. Spin up your PXE test image in whatever virtual machine environment other than virtualbox that you would like and try to access your custom menu with the new boot options!
 
+### Bonus Round
+* Now do it with Gentoo by yourself!
+* [![Gentoo Demo](images/venv-vmware-nfs-debian.png)](https://youtu.be/J48GPGzg96o)
 ## ![optional-2.png](images/optional-2.png)
-
 
 ## Import to Production Environment
 * This section will show you how to take your config as it stands now and import it onto your hardware device.
