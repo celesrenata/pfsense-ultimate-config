@@ -775,7 +775,7 @@ I will need you to find a few things before we start.
 15. accept the security risk.
 16. Create an account
     * If it says it has timed out, run this: ```docker restart portainer```
-![optional-1.png](images/important-2.png)
+#### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![optional-1.png](images/important-2.png)
 17. ```mkdir -p docker-maps/netbootxyz/{config,assets}```
 18. ```docker run -d -p 3000:3000 -p 69:69/udp -p 8080:80 --name netbootxyz --restart=always -v /home/$USER/docker-maps/assets -v /home/$USER/docker-maps/config ghcr.io/netbootxyz/netbootxyz```
 ### Initial iPXE Setup
