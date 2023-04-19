@@ -1,0 +1,22 @@
+{
+  "general":
+  {
+    "hostname": "renata",
+    "domain": "celestium.life",
+    "ip_address": "192.168.44.1"
+  },
+  "dhcp":
+  {
+    "range_start": "192.168.44.100",
+    "range_end": "192.168.44.200"
+  },
+  "rules":
+  {
+    "search_source_network": "192.168.5.0/24",
+    "replace_source_network": "192.168.44.0/24"
+  },
+  "filer": {
+    "search_string": "192.168.5.1",
+    "replace_string": "192.168.44.1"
+  }
+}

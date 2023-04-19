@@ -1163,15 +1163,20 @@ I will need you to find a few things before we start.
 3. Select: **Backup extra data**
 4. Click: **Download configuration as XML**
 5. Run: ```sudo cp $HOME/Downloads/config-pfSense* /mnt/shared/```
-6. Navigate to:your production environment's pfSense address
-7. Navigate to: **Diagnostics > Backup & Restore**
-8. Browse to the location of your shared folder locally and select the configuration version
-9. The firewall will reboot, come back to it in 10 minutes ideally for it to install everything and settle down.
-    * Your IP scheme, hostname and Domain will need to be updated to what you prefer locally. This may be able to be updated in the configuration file via ```sed``` if you are ambitious. But it is unknown what impacts that will have on the rest of the services looking for IPs/Networks. Use the GUI.
-10. Navigate to: **System > General Setup
-11. Update your Hostname and Domain
-12. Save
-13. Navigate to: **Interfaces > LAN**
-14. Update your IP Address
-15. Save
-16. Apply Changes
+6. Navigate to your parent system.
+7. Copy the config backup to your home directory.
+8. Run ```chmod +rw $HOME/path-to-config.xml```
+9. Download 'migrate-config.py' and 'network-config.json' from my repository.
+10. Edit 'network-config.json' to the settings you want in your production network.
+11. Run ```./migrate-config.py path-to-config.xml```
+12. Navigate to:your production environment's pfSense address
+13. Navigate to: **Diagnostics > Backup & Restore**
+14. Browse to the location of your newly migrated config and select the configuration version
+15. The firewall will reboot, come back to it in 10 minutes ideally for it to install everything and settle down.
+16. Navigate to: **System > General Setup
+17. Update your Hostname and Domain
+18. Save
+19. Navigate to: **Interfaces > LAN**
+20. Update your IP Address
+21. Save
+22. Apply Changes
