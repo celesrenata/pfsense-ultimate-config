@@ -49,6 +49,8 @@ This project contains the documentation on how to set up your pfSense firewall t
     3. [Test Debian Over PXE](#test-debian-over-pxe)
     4. [Bonus Round](#bonus-round)
 22. [Import to Production Environment](#import-to-production-environment)
+    1. [Migration Script](#migration-script)
+    2. [Migration Process](#migration-process)
 
 ## Features
 * Secure VPN:
@@ -74,7 +76,8 @@ This project contains the documentation on how to set up your pfSense firewall t
    * Includes how to create dynamic NFS root configurations via pfSense that iPXE reads from DHCP information. ✓
    * Includes how to create custom dynamic netboot.xyz menus for iPXE. ✓
 * Diskless Debian:
-  * Uses NFS from your fileserver and will run on anything that supports PXE. ✓
+  * Uses NFS from your fileserver and will run on anything that supports PXE. ✓ 
+* pfSense Configuration Migration. ✓
 * Network Analysis via Traffic Totals.
 * TODO:
    * Containerized Network Analysis Reports.
@@ -1157,6 +1160,18 @@ I will need you to find a few things before we start.
 ## ![optional-2.png](images/optional-2.png)
 
 ## Import to Production Environment
+### Migration Script
+* The migration script will look for the following values and update them.
+  1. Hostname
+  2. Domain
+  3. IP Address
+  4. DHCP Range
+  5. DHCP Options Data
+  6. TFTP / NextServer
+  7. Filer proxy.pac / wpad.da /wpad.dat
+  8. NAT Rules
+* DHCP options and Filer file data are stored in base64, and are handled by the script.
+### Migration Process
 * This section will show you how to take your config as it stands now and import it onto your hardware device.
 1. Using the Debian virtual machine, navigate to: http://192.168.5.1
 2. Navigate to: **Diagnostics > Backup & Restore**
@@ -1169,7 +1184,7 @@ I will need you to find a few things before we start.
 9. Download 'migrate-config.py' and 'network-config.json' from my repository.
 10. Edit 'network-config.json' to the settings you want in your production network.
 11. Run ```./migrate-config.py path-to-config.xml```
-12. Navigate to:your production environment's pfSense address
+12. Navigate to: your production environment's pfSense address
 13. Navigate to: **Diagnostics > Backup & Restore**
 14. Browse to the location of your newly migrated config and select the configuration version
 15. The firewall will reboot, come back to it in 10 minutes ideally for it to install everything and settle down.

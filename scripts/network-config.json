@@ -8,7 +8,13 @@
   "dhcp":
   {
     "range_start": "192.168.44.100",
-    "range_end": "192.168.44.200"
+    "range_end": "192.168.44.200",
+    "tftp_server": "192.168.44.9",
+    "options":
+    {
+      "search_string": "192.168.5.1",
+      "replace_string": "192.168.44.8"
+    }
   },
   "rules":
   {
