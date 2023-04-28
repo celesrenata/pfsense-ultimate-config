@@ -613,22 +613,34 @@ I will need you to find a few things before we start.
     ```
     function FindProxyForURL(url, host) 
     { 
-    
+
     //
     //If they only have a specified host name, go directly.
     //
     if (isPlainHostName(host))
-        return "DIRECT"; 
+        return "PROXY 192.168.42.1:3128"; 
     else if (shExpMatch(host, "*.google.com")) 
-        return "PROXY 192.168.5.1:3128" ;
-    else if (shExpMatch(host, "*.gstatic.com")) 
-        return "PROXY 192.168.5.1:3128" ;
+        return "PROXY 192.168.42.1:3128" ;
     else if (shExpMatch(host, "*.tidal.com")) 
-        return "PROXY 192.168.5.1:3128" ;
+        return "PROXY 192.168.42.1:3128" ;
     else if (shExpMatch(host, "*.amazon.com")) 
-        return "PROXY 192.168.5.1:3128" ;
+        return "PROXY 192.168.42.1:3128" ;
+    else if (shExpMatch(host, "*.gstatic.com")) 
+        return "PROXY 192.168.42.1:3128" ;
     else if (shExpMatch(host, "*.microsoft.com")) 
-        return "PROXY 192.168.5.1:3128" ;
+        return "PROXY 192.168.42.1:3128" ;
+    else if (shExpMatch(host, "*.apple.com"))
+        return "PROXY 192.168.42.1:3128" ;
+    else if (shExpMatch(host, "*.adobe.com"))
+        return "PROXY 192.168.42.1:3128" ;
+    else if (shExpMatch(host, "*.steam.com"))
+        return "PROXY 192.168.42.1:3128" ;
+    else if (shExpMatch(host, "*.xfinity.com"))
+        return "PROXY 192.168.42.1:3128" ;
+    else if (shExpMatch(host, "*.stackoverflow.com"))
+        return "PROXY 192.168.42.1:3128" ;
+    else if (shExpMatch(host, "*.etsy.com"))
+        return "PROXY 192.168.42.1:3128" ;
     else 
         return "DIRECT";
     }
