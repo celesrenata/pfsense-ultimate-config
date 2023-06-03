@@ -813,7 +813,7 @@ I will need you to find a few things before we start.
 14. Expand advanced options under **TFTP**
 15. Expand advanced options under **Network Booting**
 16. Enter the following data:
-    * **TFTP Server:** 192.168.5.2
+    * **Next Server:** 192.168.5.2
     * **Default BIOS file name:** netboot.xyz.kpxe
     * **UEFI 32 bit file name:** netboot.xyz.efi
     * **UEFI 64 bit file name:** netboot.xyz.efi
@@ -956,7 +956,7 @@ I will need you to find a few things before we start.
 2. Navigate to: **Menus > boot.cfg**
 3. We need to add the media location for Licensed Software
    1. Search for: ```set win_base_url```
-   2. Change it to: ```set win_base_url http://192.168.5.2:80/WinPE```
+   2. Change it to: ```set win_base_url http://${next-server}:80/WinPE```
    3. Save Config
 4. Navigate to: **windows.ipxe**
 5. Replace the entire file with the following:
@@ -1131,16 +1131,16 @@ I will need you to find a few things before we start.
     
     :option_one
     
-    initrd http://192.168.42.9:80/debian/initramfs-nfs
-    kernel http://192.168.42.9:80/debian/vmlinuz initrd=initramfs-nfs
+    initrd http://${next-server}:80/debian/initramfs-nfs
+    kernel http://${next-server}:80/debian/vmlinuz initrd=initramfs-nfs
     imgargs vmlinuz root=${153:string} ip=auto init=/lib/systemd/systemd
     imgstat
     boot || goto custom_exit
     
     :option_two
     
-    initrd http://192.168.42.9:80/debian/initramfs-nfs
-    kernel http://192.168.42.9:80/debian/vmlinuz initrd=initramfs-nfs
+    initrd http://${next-server}:80/debian/initramfs-nfs
+    kernel http://${next-server}:80/debian/vmlinuz initrd=initramfs-nfs
     imgargs vmlinuz root=${154:string} ip=auto init=/lib/systemd/systemd
     imgstat
     boot || goto custom_exit
